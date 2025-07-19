@@ -1,3 +1,4 @@
+import { LearnNavBar } from '@/components/LearnNavBar';
 import { LearningPlatform } from '@/components/LearningPlatform';
 
 interface LearningPageProps {
@@ -16,5 +17,12 @@ export default async function LearningPage({ params }: LearningPageProps) {
     throw new Error('Invalid language');
   }
 
-  return <LearningPlatform language={language} />;
+  return (
+    <div className="flex flex-col h-screen">
+      <LearnNavBar />
+      <main className="flex-1 overflow-auto">
+        <LearningPlatform language={language as 'python' | 'javascript'} />
+      </main>
+    </div>
+  );
 }
