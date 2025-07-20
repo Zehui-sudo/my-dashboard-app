@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { LearningState, LearningActions, LearningPath, SectionContent } from '@/types';
+import type { LearningState, LearningActions, LearningPath, SectionContent, ChatMessage, ChatSession } from '@/types';
 
 // Mock API functions - replace with real API calls
 const mockLearningApi = {
@@ -77,7 +77,7 @@ ${lang === 'python' ? '```python\nname = "Alice"\nage = 25\n```' : '```javascrip
           {
             type: 'code',
             language: lang,
-            code: `${lang === 'python' ? '# 创建变量\nname = "Alice"\nage = 25\nprint(f"Hello, {name}! You are {age} years old.")' : '// 创建变量\nlet name = "Alice";\nconst age = 25;\nconsole.log(`Hello, ${name}! You are ${age} years old.`);'}`,
+            code: `${lang === 'python' ? '# 创建变量\nname = "Alice"\nage = 25\nprint(f"Hello, {name}! You are {age} years old.")' : '// 创建变量\nlet name = "Alice";\nconst age = 25;\nconsole.log(`Hello, ${name}! You are ${age} years old.`);'} `,
             isInteractive: true
           }
         ]
@@ -131,6 +131,13 @@ ${lang === 'python' ? '```python\nif condition:\n    # 条件为真时执行\nel
   }
 };
 
+const createWelcomeMessage = (topic?: string): ChatMessage => ({
+  id: Date.now().toString(),
+  sender: 'ai',
+  content: `你好！我是你的AI学习助手。${topic ? `关于“${topic}”，` : ''}你有什么问题吗？我可以帮你解释概念、提供示例，或者解答你的疑问。`,
+  timestamp: Date.now(),
+});
+
 export const useLearningStore = create<LearningState & LearningActions>()(
   persist(
     (set, get) => ({
@@ -150,10 +157,11 @@ export const useLearningStore = create<LearningState & LearningActions>()(
         expandedChapters: [],
         searchQuery: '',
       },
+      chatSessions: [],
+      activeChatSessionId: null,
 
       // Actions
       loadPath: async (language: 'python' | 'javascript') => {
-        // Prevent re-loading if already loading or same language
         const state = get();
         if (state.loading.path || state.currentPath?.language === language) {
           return;
@@ -171,6 +179,12 @@ export const useLearningStore = create<LearningState & LearningActions>()(
             loading: { ...get().loading, path: false },
             error: { ...get().error, path: null }
           });
+          
+          // If no chats exist, create a default one
+          if (get().chatSessions.length === 0) {
+            get().createNewChat();
+          }
+
         } catch (error) {
           set({
             loading: { ...get().loading, path: false },
@@ -180,7 +194,6 @@ export const useLearningStore = create<LearningState & LearningActions>()(
       },
 
       loadSection: async (sectionId: string) => {
-        // Prevent re-loading if already loading or same section
         const state = get();
         if (state.loading.section || state.currentSection?.id === sectionId) {
           return;
@@ -223,13 +236,95 @@ export const useLearningStore = create<LearningState & LearningActions>()(
           }
         }));
       },
+
+      // --- Chat Actions ---
+      createNewChat: () => {
+        const newSession: ChatSession = {
+          id: `chat-${Date.now()}`,
+          title: '新的对话',
+          messages: [createWelcomeMessage()],
+          createdAt: Date.now(),
+        };
+        set(state => ({
+          chatSessions: [...state.chatSessions, newSession],
+          activeChatSessionId: newSession.id,
+        }));
+      },
+
+      switchChat: (sessionId: string) => {
+        if (get().chatSessions.some(s => s.id === sessionId)) {
+          set({ activeChatSessionId: sessionId });
+        }
+      },
+
+      deleteChat: (sessionId: string) => {
+        set(state => {
+          const remainingSessions = state.chatSessions.filter(s => s.id !== sessionId);
+          let newActiveId = state.activeChatSessionId;
+
+          if (newActiveId === sessionId) {
+            newActiveId = remainingSessions.length > 0 ? remainingSessions[0].id : null;
+          }
+          
+          return {
+            chatSessions: remainingSessions,
+            activeChatSessionId: newActiveId,
+          };
+        });
+      },
+      
+      renameChat: (sessionId: string, newTitle: string) => {
+        set(state => ({
+          chatSessions: state.chatSessions.map(session => 
+            session.id === sessionId ? { ...session, title: newTitle } : session
+          ),
+        }));
+      },
+
+      addMessageToActiveChat: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => {
+        set(state => {
+          const activeId = state.activeChatSessionId;
+          if (!activeId) return {};
+
+          const newMessage: ChatMessage = {
+            ...message,
+            id: `${message.sender}-${Date.now()}`,
+            timestamp: Date.now(),
+          };
+
+          return {
+            chatSessions: state.chatSessions.map(session => {
+              if (session.id === activeId) {
+                // If it's the first user message, update the chat title
+                const isFirstUserMessage = session.messages.filter(m => m.sender === 'user').length === 0 && message.sender === 'user';
+                return {
+                  ...session,
+                  title: isFirstUserMessage ? message.content.substring(0, 20) : session.title,
+                  messages: [...session.messages, newMessage],
+                };
+              }
+              return session;
+            }),
+          };
+        });
+      },
     }),
     {
       name: 'learning-store',
-      partialize: (state) => ({ 
+      partialize: (state) => ({
         userCodeSnippets: state.userCodeSnippets,
-        uiState: state.uiState 
+        uiState: state.uiState,
+        chatSessions: state.chatSessions,
+        activeChatSessionId: state.activeChatSessionId,
       }),
     }
   )
 );
+
+// Initial state for non-persisted parts
+useLearningStore.setState({
+  currentPath: null,
+  currentSection: null,
+  loading: { path: false, section: false },
+  error: { path: null, section: null },
+});

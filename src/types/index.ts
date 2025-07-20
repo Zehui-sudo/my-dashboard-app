@@ -60,6 +60,25 @@ export interface LearningState {
   };
   userCodeSnippets: Record<string, string>; // Key: SectionID, Value: User's code
   uiState: UIState;
+  // AI Chat State
+  chatSessions: ChatSession[];
+  activeChatSessionId: string | null;
+}
+
+// AI 对话消息
+export interface ChatMessage {
+  id: string;
+  content: string;
+  sender: 'user' | 'ai';
+  timestamp: number; // 使用时间戳以方便序列化
+}
+
+// AI 对话会话
+export interface ChatSession {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  createdAt: number;
 }
 
 export interface LearningActions {
@@ -67,6 +86,12 @@ export interface LearningActions {
   loadSection: (sectionId: string) => Promise<void>;
   updateUserCode: (sectionId: string, code: string) => void;
   updateUIState: (uiState: Partial<UIState>) => void;
+  // AI Chat Actions
+  createNewChat: () => void;
+  switchChat: (sessionId: string) => void;
+  deleteChat: (sessionId: string) => void;
+  renameChat: (sessionId: string, newTitle: string) => void;
+  addMessageToActiveChat: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
 }
 
 // API 响应类型
