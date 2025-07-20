@@ -19,7 +19,7 @@ interface Message {
 }
 
 export function AIChatSidebar() {
-  const { currentSection } = useLearningStore();
+  const currentSection = useLearningStore((state) => state.currentSection);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);

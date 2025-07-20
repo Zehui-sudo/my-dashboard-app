@@ -1,19 +1,33 @@
 'use client';
 
+import { useRef, useEffect } from 'react';
 import { useLearningStore } from '@/store/learningStore';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, BookOpen } from 'lucide-react';
-import { MarkdownRenderer } from './MarkdownRenderer';
+import { EnhancedMarkdownRenderer } from './EnhancedMarkdownRenderer';
 import { InteractiveCodeBlock } from './InteractiveCodeBlock';
 
 export function ContentDisplay() {
-  const { 
-    currentSection, 
-    loading, 
-    error
-  } = useLearningStore();
+  const currentSection = useLearningStore((state) => state.currentSection);
+  const loading = useLearningStore((state) => state.loading);
+  const error = useLearningStore((state) => state.error);
+  
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const currentSectionIdRef = useRef(currentSection?.id);
+
+  // Only reset scroll when section changes, not when content updates
+  useEffect(() => {
+    if (currentSectionIdRef.current !== currentSection?.id) {
+      currentSectionIdRef.current = currentSection?.id;
+      // Reset scroll position when navigating to a new section
+      const scrollElement = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollElement) {
+        scrollElement.scrollTop = 0;
+      }
+    }
+  }, [currentSection?.id]);
 
   if (loading.section) {
     return (
@@ -68,18 +82,19 @@ export function ContentDisplay() {
       </div>
 
       {/* Content */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1" ref={scrollAreaRef}>
         <div className="p-6 pt-0 space-y-6 max-w-4xl mx-auto">
           {currentSection.contentBlocks.map((block, index) => (
-            <div key={index}>
+            <div key={`block-${currentSection.id}-${index}`}>
               {block.type === 'markdown' && (
-                <div className="prose dark:prose-invert max-w-none">
-                  <MarkdownRenderer content={block.content} />
+                <div className="max-w-none">
+                  <EnhancedMarkdownRenderer content={block.content} />
                 </div>
               )}
               
               {block.type === 'code' && (
                 <InteractiveCodeBlock
+                  key={`${currentSection.id}-${index}`}
                   language={block.language}
                   initialCode={block.code}
                   sectionId={currentSection.id}

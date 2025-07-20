@@ -1,15 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLearningStore } from '@/store/learningStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Play, Copy, Check, AlertTriangle, Loader2 } from 'lucide-react';
+import { Play, Copy, Check, AlertTriangle, Loader2, RotateCcw } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { CodeMirrorCodeBlock } from './CodeMirrorCodeBlock';
 
 interface InteractiveCodeBlockProps {
   language: 'python' | 'javascript';
@@ -22,30 +21,38 @@ export function InteractiveCodeBlock({
   initialCode, 
   sectionId 
 }: InteractiveCodeBlockProps) {
-  const { userCodeSnippets, updateUserCode } = useLearningStore();
+  // Subscribe only to the specific code snippet for this section
+  const userCode = useLearningStore((state) => state.userCodeSnippets[sectionId]);
+  const updateUserCode = useLearningStore((state) => state.updateUserCode);
   
-  const [code, setCode] = useState(userCodeSnippets[sectionId] || initialCode);
+  const [code, setCode] = useState(userCode || initialCode);
   const [output, setOutput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [showOutput, setShowOutput] = useState(false);
 
   // Update code when section changes
   useEffect(() => {
-    setCode(userCodeSnippets[sectionId] || initialCode);
+    setCode(userCode || initialCode);
     setOutput('');
     setError('');
-  }, [sectionId, initialCode, userCodeSnippets]);
+    setShowOutput(false);
+  }, [sectionId, initialCode, userCode]);
 
-  const handleCodeChange = (newCode: string) => {
+  const handleCodeChange = useCallback((newCode: string) => {
     setCode(newCode);
+  }, []);
+
+  const handleCodeBlur = useCallback((newCode: string) => {
     updateUserCode(sectionId, newCode);
-  };
+  }, [sectionId, updateUserCode]);
 
   const handleRunCode = async () => {
     setIsRunning(true);
     setError('');
     setOutput('');
+    setShowOutput(true);
 
     try {
       // Simulate code execution
@@ -117,6 +124,7 @@ export function InteractiveCodeBlock({
           </div>
           <div className="flex items-center gap-2">
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={handleCopyCode}
@@ -129,95 +137,92 @@ export function InteractiveCodeBlock({
               )}
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={handleResetCode}
               className="h-7 px-2 text-xs"
             >
-              重置
+              <RotateCcw className="h-3 w-3" />
             </Button>
           </div>
         </div>
       </CardHeader>
       
-      <CardContent>
-        <Tabs defaultValue="code" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="code" className="text-sm">
-              代码
-            </TabsTrigger>
-            <TabsTrigger value="output" className="text-sm">
-              输出
-            </TabsTrigger>
-          </TabsList>
+      <CardContent className="space-y-4">
+        {/* Code Editor */}
+        <div className="space-y-3">
+          <div className="relative">
+            <CodeMirrorCodeBlock
+              value={code}
+              onChange={handleCodeChange}
+              onBlur={handleCodeBlur}
+              language={language}
+              height="200px"
+              className="border-0"
+            />
+          </div>
           
-          <TabsContent value="code" className="mt-0">
-            <div className="space-y-3">
-              <div className="relative">
-                <Textarea
-                  value={code}
-                  onChange={(e) => handleCodeChange(e.target.value)}
-                  className="min-h-[200px] font-mono text-sm bg-muted/50 resize-none"
-                  placeholder={`在${language === 'python' ? 'Python' : 'JavaScript'}中输入代码...`}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <Button
-                  size="sm"
-                  onClick={handleRunCode}
-                  disabled={isRunning}
-                  className="flex items-center gap-2"
-                >
-                  {isRunning ? (
-                    <>
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      运行中...
-                    </>
-                  ) : (
-                    <>
-                      <Play className="h-3 w-3" />
-                      运行代码
-                    </>
-                  )}
-                </Button>
-                
-                <div className="text-xs text-muted-foreground">
-                  {code.length} 字符
-                </div>
-              </div>
+          <div className="flex items-center justify-between">
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleRunCode}
+              disabled={isRunning}
+              className="flex items-center gap-2"
+            >
+              {isRunning ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  运行中...
+                </>
+              ) : (
+                <>
+                  <Play className="h-3 w-3" />
+                  运行代码
+                </>
+              )}
+            </Button>
+            
+            <div className="text-xs text-muted-foreground">
+              {code.length} 字符
             </div>
-          </TabsContent>
-          
-          <TabsContent value="output" className="mt-0">
-            <div className="space-y-3">
-              {error && (
-                <Alert variant="destructive" className="mb-3">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              
-              {output && (
-                <div className="rounded-lg border bg-muted/50">
-                  <div className="border-b px-3 py-2 text-sm font-medium">
-                    输出结果
-                  </div>
-                  <ScrollArea className="h-[200px]">
-                    <pre className="p-3 text-sm font-mono whitespace-pre-wrap">{output}</pre>
-                  </ScrollArea>
+          </div>
+        </div>
+
+        {/* Output Section - Only shown when there's output or error */}
+        {showOutput && (
+          <div className="space-y-3 animate-in slide-in-from-bottom-2 duration-300">
+            {error && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
+            {output && !error && (
+              <div className="rounded-lg border bg-muted/50">
+                <div className="border-b px-3 py-2 text-sm font-medium">
+                  输出结果
                 </div>
-              )}
-              
-              {!output && !error && (
-                <div className="text-center py-8 text-sm text-muted-foreground"
-                >
-                  点击&#34;运行代码&#34;查看输出结果
+                <ScrollArea className="h-[150px]">
+                  <pre className="p-3 text-sm font-mono whitespace-pre-wrap">{output}</pre>
+                </ScrollArea>
+              </div>
+            )}
+            
+            {!output && !error && (
+              <div className="rounded-lg border bg-muted/50">
+                <div className="border-b px-3 py-2 text-sm font-medium">
+                  输出结果
                 </div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  执行中...
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

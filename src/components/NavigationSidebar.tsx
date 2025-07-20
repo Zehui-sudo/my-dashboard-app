@@ -15,7 +15,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export function NavigationSidebar() {
-  const { currentPath, currentSection, loadSection, loadPath, uiState, updateUIState } = useLearningStore();
+  const currentPath = useLearningStore((state) => state.currentPath);
+  const currentSection = useLearningStore((state) => state.currentSection);
+  const loadSection = useLearningStore((state) => state.loadSection);
+  const loadPath = useLearningStore((state) => state.loadPath);
+  const uiState = useLearningStore((state) => state.uiState);
+  const updateUserCode = useLearningStore((state) => state.updateUserCode);
+  const updateUIState = useLearningStore((state) => state.updateUIState);
   const { expandedChapters, searchQuery } = uiState;
   const currentSectionId = currentSection?.id || '';
 
