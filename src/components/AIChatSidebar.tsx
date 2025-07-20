@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
 import { useLearningStore } from '@/store/learningStore';
 import type { SectionContent } from '@/types';
@@ -102,18 +103,6 @@ export function AIChatSidebar() {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="border-b p-4">
-        <div className="flex items-center gap-2">
-          <Bot className="h-5 w-5 text-primary" />
-          <div>
-            <h2 className="text-lg font-semibold">AI学习助手</h2>
-            <Badge variant="secondary" className="text-xs">
-              在线
-            </Badge>
-          </div>
-        </div>
-      </div>
 
       {/* Messages */}
       <ScrollArea className="flex-1" ref={scrollAreaRef}>
@@ -177,7 +166,7 @@ export function AIChatSidebar() {
       </ScrollArea>
 
       {/* Input Area */}
-      <div className="border-t p-4">
+      <Card className="p-4 border-t">
         <div className="flex gap-2">
           <Textarea
             value={inputMessage}
@@ -199,7 +188,7 @@ export function AIChatSidebar() {
         <p className="text-xs text-muted-foreground mt-2">
           按 Enter 发送，Shift+Enter 换行
         </p>
-      </div>
+      </Card>
     </div>
   );
 }

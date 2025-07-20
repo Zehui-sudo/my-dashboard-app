@@ -7,11 +7,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { Search, ChevronRight, CheckCircle2, Circle } from 'lucide-react';
+import { Search, ChevronRight, CheckCircle2, Circle, ChevronDown } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export function NavigationSidebar() {
-  const { currentPath, loadSection } = useLearningStore();
+  const { currentPath, loadSection, loadPath } = useLearningStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedChapters, setExpandedChapters] = useState<string[]>([]);
   const router = useRouter();
@@ -19,7 +25,6 @@ export function NavigationSidebar() {
 
   const currentSectionId = params.sectionId as string;
 
-  // Filter sections based on search query
   const filteredChapters = currentPath?.chapters.map(chapter => ({
     ...chapter,
     sections: chapter.sections.filter(section =>
@@ -32,32 +37,48 @@ export function NavigationSidebar() {
 
   const handleSectionClick = (section: { id: string; title: string; chapterId: string }) => {
     loadSection(section.id);
-    router.push(`/learn/${currentPath?.language}/${section.chapterId}/${section.id}`);
+    if (currentPath?.language) {
+      router.push(`/learn/${currentPath.language}/${section.chapterId}/${section.id}`);
+    }
   };
 
+  const handleLanguageChange = (language: 'python' | 'javascript') => {
+    loadPath(language);
+    router.push(`/learn`);
+  };
 
   const isSectionCompleted = (_sectionId: string) => {
-    // Mock completion status - replace with actual logic
-    // Using a hash function to provide consistent results for testing
     let hash = 0;
     for (let i = 0; i < _sectionId.length; i++) {
       const char = _sectionId.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
+      hash = hash & hash;
     }
-    return Math.abs(hash) % 10 > 7; // 30% completion rate
+    return Math.abs(hash) % 10 > 7;
   };
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
       <div className="p-4 border-b">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">课程目录</h2>
           {currentPath && (
-            <Badge variant="outline" className="text-xs">
-              {currentPath.language.toUpperCase()}
-            </Badge>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="flex items-center gap-1">
+                  {currentPath.language === 'python' ? 'Python' : 'JavaScript'}
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleLanguageChange('python')}>
+                  Python
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleLanguageChange('javascript')}>
+                  JavaScript
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
         <div className="relative">
@@ -71,7 +92,6 @@ export function NavigationSidebar() {
         </div>
       </div>
 
-      {/* Navigation Content */}
       <ScrollArea className="flex-1">
         <div className="p-4">
           {filteredChapters.length === 0 ? (
@@ -128,7 +148,6 @@ export function NavigationSidebar() {
         </div>
       </ScrollArea>
 
-      {/* Footer */}
       <div className="border-t p-4">
         <div className="text-xs text-muted-foreground text-center">
           总进度: {currentPath?.chapters.reduce((acc, ch) => acc + ch.sections.length, 0) || 0} 章节

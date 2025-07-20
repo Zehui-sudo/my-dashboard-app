@@ -73,24 +73,22 @@ export function ContentDisplay() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="border-b p-4">
+      <div className="p-4">
         <h1 className="text-2xl font-bold">{currentSection.id.split('-').pop()?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          交互式学习体验，边学边练
+          交互式学习体验，边学��练
         </p>
       </div>
 
       {/* Content */}
       <ScrollArea className="flex-1">
-        <div className="p-6 space-y-6 max-w-4xl mx-auto">
+        <div className="p-6 pt-0 space-y-6 max-w-4xl mx-auto">
           {currentSection.contentBlocks.map((block, index) => (
             <div key={index}>
               {block.type === 'markdown' && (
-                <Card>
-                  <CardContent className="pt-6">
-                    <MarkdownRenderer content={block.content} />
-                  </CardContent>
-                </Card>
+                <div className="prose dark:prose-invert max-w-none">
+                  <MarkdownRenderer content={block.content} />
+                </div>
               )}
               
               {block.type === 'code' && (
@@ -104,17 +102,13 @@ export function ContentDisplay() {
           ))}
           
           {currentSection.contentBlocks.length === 0 && (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-8">
-                  <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">内容准备中</h3>
-                  <p className="text-sm text-muted-foreground">
-                    这个章节的内容正在精心准备中，敬请期待！
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="text-center py-8">
+              <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">内容准备中</h3>
+              <p className="text-sm text-muted-foreground">
+                这个章节的内容正在精心准备中，敬请期待��
+              </p>
+            </div>
           )}
         </div>
       </ScrollArea>

@@ -87,7 +87,7 @@ export function LearnNavBar() {
 
   return (
     <TooltipProvider>
-      <header className="flex items-center justify-between h-16 px-4 md:px-6 border-b bg-background">
+      <header className="flex items-center justify-between h-16 px-4 md:px-6 border-b">
         {/* Left Section */}
         <div className="flex items-center gap-4">
           <Link href="/" className="flex items-center gap-2 font-semibold">
