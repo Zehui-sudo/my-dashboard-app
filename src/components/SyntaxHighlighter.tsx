@@ -95,7 +95,7 @@ export function SyntaxHighlighter({ code, language = 'text', className }: Syntax
   }, [code, language]);
 
   return (
-    <pre className={className}>
+    <pre className={`${className} whitespace-pre-wrap`}>
       <code 
         dangerouslySetInnerHTML={{ __html: highlightedCode }}
         className="text-sm font-mono"

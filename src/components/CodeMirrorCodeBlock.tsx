@@ -133,6 +133,7 @@ export const CodeMirrorCodeBlock = memo(function CodeMirrorCodeBlock({
           themeExtension,
           syntaxHighlighting(defaultHighlightStyle),
           blurExtension,
+          EditorView.lineWrapping, // Add this line to enable line wrapping
         ]}
         onChange={onChange}
         readOnly={readOnly}
