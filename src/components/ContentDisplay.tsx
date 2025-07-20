@@ -1,32 +1,19 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useLearningStore } from '@/store/learningStore';
-import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, BookOpen } from 'lucide-react';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { InteractiveCodeBlock } from './InteractiveCodeBlock';
-import { useParams } from 'next/navigation';
 
 export function ContentDisplay() {
   const { 
     currentSection, 
     loading, 
-    error, 
-    loadSection 
+    error
   } = useLearningStore();
-  
-  const params = useParams();
-  const sectionId = params.sectionId as string;
-
-  useEffect(() => {
-    if (sectionId) {
-      loadSection(sectionId);
-    }
-  }, [sectionId]);
 
   if (loading.section) {
     return (

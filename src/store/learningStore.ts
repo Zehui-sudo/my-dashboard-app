@@ -146,6 +146,10 @@ export const useLearningStore = create<LearningState & LearningActions>()(
         section: null,
       },
       userCodeSnippets: {},
+      uiState: {
+        expandedChapters: [],
+        searchQuery: '',
+      },
 
       // Actions
       loadPath: async (language: 'python' | 'javascript') => {
@@ -210,10 +214,22 @@ export const useLearningStore = create<LearningState & LearningActions>()(
           }
         }));
       },
+
+      updateUIState: (uiState: Partial<{ expandedChapters: string[]; searchQuery: string }>) => {
+        set((state) => ({
+          uiState: {
+            ...state.uiState,
+            ...uiState
+          }
+        }));
+      },
     }),
     {
       name: 'learning-store',
-      partialize: (state) => ({ userCodeSnippets: state.userCodeSnippets }),
+      partialize: (state) => ({ 
+        userCodeSnippets: state.userCodeSnippets,
+        uiState: state.uiState 
+      }),
     }
   )
 );

@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useLearningStore } from '@/store/learningStore';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Search, ChevronRight, CheckCircle2, Circle, ChevronDown } from 'lucide-react';
-import { useRouter, useParams } from 'next/navigation';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,13 +15,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export function NavigationSidebar() {
-  const { currentPath, loadSection, loadPath } = useLearningStore();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [expandedChapters, setExpandedChapters] = useState<string[]>([]);
-  const router = useRouter();
-  const params = useParams();
+  const { currentPath, currentSection, loadSection, loadPath, uiState, updateUIState } = useLearningStore();
+  const { expandedChapters, searchQuery } = uiState;
+  const currentSectionId = currentSection?.id || '';
 
-  const currentSectionId = params.sectionId as string;
 
   const filteredChapters = currentPath?.chapters.map(chapter => ({
     ...chapter,
@@ -37,14 +32,10 @@ export function NavigationSidebar() {
 
   const handleSectionClick = (section: { id: string; title: string; chapterId: string }) => {
     loadSection(section.id);
-    if (currentPath?.language) {
-      router.push(`/learn/${currentPath.language}/${section.chapterId}/${section.id}`);
-    }
   };
 
   const handleLanguageChange = (language: 'python' | 'javascript') => {
     loadPath(language);
-    router.push(`/learn`);
   };
 
   const isSectionCompleted = (_sectionId: string) => {
@@ -86,7 +77,7 @@ export function NavigationSidebar() {
           <Input
             placeholder="搜索章节..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => updateUIState({ searchQuery: e.target.value })}
             className="pl-9 text-sm"
           />
         </div>
@@ -102,7 +93,7 @@ export function NavigationSidebar() {
             <Accordion
               type="multiple"
               value={expandedChapters}
-              onValueChange={setExpandedChapters}
+              onValueChange={(value) => updateUIState({ expandedChapters: value })}
             >
               {filteredChapters.map((chapter, chapterIndex) => (
                 <AccordionItem key={chapter.id} value={chapter.id}>

@@ -40,6 +40,12 @@ export interface InteractiveCodeBlock {
   isInteractive: true;
 }
 
+// UI状态类型
+export interface UIState {
+  expandedChapters: string[];
+  searchQuery: string;
+}
+
 // 全局状态类型
 export interface LearningState {
   currentPath: LearningPath | null;
@@ -53,12 +59,14 @@ export interface LearningState {
     section: string | null;
   };
   userCodeSnippets: Record<string, string>; // Key: SectionID, Value: User's code
+  uiState: UIState;
 }
 
 export interface LearningActions {
   loadPath: (language: 'python' | 'javascript') => Promise<void>;
   loadSection: (sectionId: string) => Promise<void>;
   updateUserCode: (sectionId: string, code: string) => void;
+  updateUIState: (uiState: Partial<UIState>) => void;
 }
 
 // API 响应类型

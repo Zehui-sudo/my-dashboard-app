@@ -40,10 +40,10 @@ export default function DashboardPage() {
               三栏式布局设计：左侧导航、中间内容、右侧AI助手
             </p>
             <div className="flex gap-2">
-              <Link href="/learn/python/python-ch-1-basics/python-sec-1-1-variables">
+              <Link href="/learn">
                 <Button>开始学习 Python</Button>
               </Link>
-              <Link href="/learn/javascript/javascript-ch-1-basics/javascript-sec-1-1-variables">
+              <Link href="/learn">
                 <Button variant="outline">JavaScript 教程</Button>
               </Link>
             </div>

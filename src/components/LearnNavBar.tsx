@@ -2,7 +2,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useParams } from "next/navigation";
 import { useMemo } from "react";
 import { useLearningStore } from "@/store/learningStore";
 import {
@@ -23,17 +22,14 @@ import {
 import { Home, ChevronLeft, ChevronRight, BookOpen } from "lucide-react";
 
 export function LearnNavBar() {
-  const router = useRouter();
-  const params = useParams();
-  const { currentPath, currentSection } = useLearningStore();
-
-  const { language, chapterId, sectionId } = params;
+  const { currentPath, currentSection, loadPath, loadSection } = useLearningStore();
 
   const {
     allSections,
     currentSectionIndex,
     currentChapterTitle,
     progressValue,
+    language,
   } = useMemo(() => {
     if (!currentPath || !currentSection) {
       return {
@@ -41,12 +37,16 @@ export function LearnNavBar() {
         currentSectionIndex: -1,
         currentChapterTitle: "",
         progressValue: 0,
+        language: '',
+        sectionId: ''
       };
     }
 
     const sections = currentPath.chapters.flatMap((ch) => ch.sections);
-    const currentIndex = sections.findIndex((s) => s.id === sectionId);
-    const chapter = currentPath.chapters.find((ch) => ch.id === chapterId);
+    const currentIndex = sections.findIndex((s) => s.id === currentSection.id);
+    const chapter = currentPath.chapters.find((ch) => 
+      ch.sections.some(section => section.id === currentSection.id)
+    );
     const progress = sections.length > 0 ? ((currentIndex + 1) / sections.length) * 100 : 0;
 
     return {
@@ -54,13 +54,14 @@ export function LearnNavBar() {
       currentSectionIndex: currentIndex,
       currentChapterTitle: chapter?.title || "",
       progressValue: progress,
+      language: currentPath.language,
+      sectionId: currentSection.id
     };
-  }, [currentPath, currentSection, sectionId, chapterId]);
+  }, [currentPath, currentSection]);
 
   const handleLanguageChange = (newLang: "python" | "javascript") => {
     if (newLang !== language) {
-      // Reset to the first section of the new language path
-      router.push(`/learn/${newLang}`);
+      loadPath(newLang);
     }
   };
 
@@ -68,9 +69,7 @@ export function LearnNavBar() {
     const newIndex = currentSectionIndex + offset;
     if (newIndex >= 0 && newIndex < allSections.length) {
       const newSection = allSections[newIndex];
-      router.push(
-        `/learn/${language}/${newSection.chapterId}/${newSection.id}`
-      );
+      loadSection(newSection.id);
     }
   };
 
