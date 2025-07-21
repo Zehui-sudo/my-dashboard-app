@@ -127,7 +127,7 @@ export function InteractiveCodeBlock({
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader className="pb-3">
+      <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CardTitle className="text-base">代码练习</CardTitle>
@@ -194,9 +194,9 @@ export function InteractiveCodeBlock({
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         {/* Code Editor */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="relative">
             <CodeMirrorCodeBlock
               value={code}
