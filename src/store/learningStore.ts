@@ -49,85 +49,42 @@ const mockLearningApi = {
   },
 
   getSectionContent: async (sectionId: string): Promise<SectionContent> => {
+    // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const isPython = sectionId.includes('python');
-    const lang = isPython ? 'python' : 'javascript';
-    
-    // Mock content for different sections
-    if (sectionId.includes('variables')) {
+
+    try {
+      const response = await fetch(`/content/${sectionId}.md`);
+      
+      if (!response.ok) {
+        // If the file is not found, throw an error to be caught below
+        throw new Error(`Markdown file not found for section: ${sectionId}`);
+      }
+      
+      const markdownContent = await response.text();
+
       return {
         id: sectionId,
         contentBlocks: [
           {
             type: 'markdown',
-            content: `# 变量与数据类型
-
-在${lang === 'python' ? 'Python' : 'JavaScript'}中，变量是存储数据的容器。
-
-## 基本语法
-
-${lang === 'python' ? '```python\nname = "Alice"\nage = 25\n```' : '```javascript\nlet name = "Alice";\nconst age = 25;\n```'}
-
-变量名需要遵循命名规则：
-- 只能包含字母、数字和下划线
-- 不能以数字开头
-- 区分大小写`
+            content: markdownContent,
           },
-          {
-            type: 'code',
-            language: lang,
-            code: `${lang === 'python' ? '# 创建变量\nname = "Alice"\nage = 25\nprint(f"Hello, {name}! You are {age} years old.")' : '// 创建变量\nlet name = "Alice";\nconst age = 25;\nconsole.log(`Hello, ${name}! You are ${age} years old.`);'} `,
-            isInteractive: true
-          }
-        ]
+        ],
       };
-    }
-    
-    if (sectionId.includes('conditionals')) {
+    } catch (error) {
+      console.warn(error);
+      
+      // Fallback content when fetch fails or file doesn't exist
       return {
         id: sectionId,
         contentBlocks: [
           {
             type: 'markdown',
-            content: `# 条件语句
-
-条件语句用于根据不同的条件执行不同的代码块。
-
-## if 语句
-
-${lang === 'python' ? '```python\nif condition:\n    # 条件为真时执行\nelse:\n    # 条件为假时执行\n```' : '```javascript\nif (condition) {\n    // 条件为真时执行\n} else {\n    // 条件为假时执行\n}\n```'}
-
-## 示例场景
-
-判断一个数字是正数、负数还是零。`
-          },
-          {
-            type: 'code',
-            language: lang,
-            code: `${lang === 'python' ? '# 判断数字类型\nnumber = 10\n\nif number > 0:\n    print("正数")\nelif number < 0:\n    print("负数")\nelse:\n    print("零")' : '// 判断数字类型\nlet number = 10;\n\nif (number > 0) {\n    console.log("正数");\n} else if (number < 0) {\n    console.log("负数");\n} else {\n    console.log("零");\n}'}`,
-            isInteractive: true
+            content: `# ${sectionId.split('-').pop()?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}\n\n此章节的内容正在精心准备中，敬请期待！`
           }
         ]
       };
     }
-
-    // Default content
-    return {
-      id: sectionId,
-      contentBlocks: [
-        {
-          type: 'markdown',
-          content: `# ${sectionId.split('-').pop()?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-
-这是关于 ${sectionId} 的内容。
-
-## 即将推出
-
-此章节的内容正在精心准备中，敬请期待！`
-        }
-      ]
-    };
   }
 };
 

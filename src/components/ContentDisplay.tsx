@@ -74,12 +74,6 @@ export function ContentDisplay() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="p-4">
-        <h1 className="text-2xl font-bold">{currentSection.id.split('-').pop()?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          交互式学习体验，边学��练
-        </p>
-      </div>
 
       {/* Content */}
       <ScrollArea className="flex-1" ref={scrollAreaRef}>
