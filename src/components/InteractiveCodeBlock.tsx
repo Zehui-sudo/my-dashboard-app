@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Play, Copy, Check, AlertTriangle, Loader2, RotateCcw } from 'lucide-react';
+import { Play, Copy, Check, AlertTriangle, Loader2, RotateCcw, Search, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CodeMirrorCodeBlock } from './CodeMirrorCodeBlock';
 
@@ -31,6 +31,8 @@ export function InteractiveCodeBlock({
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [showOutput, setShowOutput] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
 
   // Update code when section changes
   useEffect(() => {
@@ -112,6 +114,17 @@ export function InteractiveCodeBlock({
     setError('');
   };
 
+  const handleSearchToggle = () => {
+    setShowSearch(!showSearch);
+    if (showSearch) {
+      setSearchTerm('');
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-3">
@@ -123,6 +136,38 @@ export function InteractiveCodeBlock({
             </Badge>
           </div>
           <div className="flex items-center gap-2">
+            {showSearch && (
+              <div className="flex items-center gap-2 animate-in fade-in duration-200">
+                <input
+                  type="text"
+                  placeholder="搜索..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  className="h-7 w-32 px-2 text-xs border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                  autoFocus
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSearchToggle}
+                  className="h-7 px-2"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+            {!showSearch && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleSearchToggle}
+                className="h-7 px-2"
+              >
+                <Search className="h-3 w-3" />
+              </Button>
+            )}
             <Button
               type="button"
               variant="ghost"
@@ -160,6 +205,8 @@ export function InteractiveCodeBlock({
               language={language}
               height="200px"
               className="border-0"
+              searchTerm={searchTerm}
+              enableSearch={showSearch}
             />
           </div>
           
