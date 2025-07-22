@@ -16,13 +16,15 @@ interface EnhancedMarkdownRendererProps {
   className?: string;
   enableMath?: boolean;
   enableGfm?: boolean;
+  fontSize?: number;
 }
 
 export function EnhancedMarkdownRenderer({
   content,
   className,
   enableMath = true,
-  enableGfm = true
+  enableGfm = true,
+  fontSize = 16
 }: EnhancedMarkdownRendererProps) {
   const plugins = useMemo(() => {
     const plugins = [];
@@ -37,8 +39,13 @@ export function EnhancedMarkdownRenderer({
     return plugins;
   }, [enableMath]);
 
+  const scaleFactor = fontSize / 16;
+
   return (
-    <div className={cn("prose prose-sm dark:prose-invert max-w-none", className)}>
+    <div 
+      className={cn("prose prose-sm dark:prose-invert max-w-none", className)}
+      style={{ fontSize: `${fontSize}px` }}
+    >
       <ReactMarkdown
         remarkPlugins={plugins}
         rehypePlugins={rehypePlugins}
@@ -49,8 +56,8 @@ export function EnhancedMarkdownRenderer({
             if (hasTable) {
               return <>{children}</>;
             }
-            // Default paragraph rendering with Tailwind classes
-            return <p className="my-4 text-base leading-relaxed">{children}</p>;
+            // Default paragraph rendering with relative spacing
+            return <p className="my-4 leading-relaxed">{children}</p>;
           },
           code: ({ node, className, children, ...props }) => {
             const match = /language-(\w+(?:-\w+)?)/.exec(className || '');
@@ -68,6 +75,7 @@ export function EnhancedMarkdownRenderer({
                       language="python"
                       initialCode={codeContent}
                       sectionId={sectionId}
+                      fontSize={fontSize}
                     />
                   </div>
                 );
@@ -79,6 +87,7 @@ export function EnhancedMarkdownRenderer({
                       language="javascript"
                       initialCode={codeContent}
                       sectionId={sectionId}
+                      fontSize={fontSize}
                     />
                   </div>
                 );
@@ -87,17 +96,21 @@ export function EnhancedMarkdownRenderer({
 
             // Render inline code
             return (
-              <code className="bg-muted text-muted-foreground font-mono text-sm px-1.5 py-1 rounded-md" {...props}>
+              <code 
+                className="bg-muted text-muted-foreground font-mono px-1.5 py-1 rounded-md" 
+                style={{ fontSize: '0.875em' }}
+                {...props}
+              >
                 {children}
               </code>
             );
           },
-          h1: ({ children }) => <h1 className="text-4xl font-bold mt-8 mb-4 pb-2 border-b">{children}</h1>,
-          h2: ({ children }) => <h2 className="text-3xl font-semibold mt-10 mb-4 pb-2 border-b">{children}</h2>,
-          h3: ({ children }) => <h3 className="text-2xl font-semibold mt-8 mb-4">{children}</h3>,
-          h4: ({ children }) => <h4 className="text-xl font-semibold mt-6 mb-4">{children}</h4>,
-          h5: ({ children }) => <h5 className="text-lg font-semibold mt-4 mb-2">{children}</h5>,
-          h6: ({ children }) => <h6 className="text-base font-semibold mt-4 mb-2">{children}</h6>,
+          h1: ({ children }) => <h1 className="font-bold mt-8 mb-4 pb-2 border-b" style={{ fontSize: '2.5em' }}>{children}</h1>,
+          h2: ({ children }) => <h2 className="font-semibold mt-10 mb-4 pb-2 border-b" style={{ fontSize: '2em' }}>{children}</h2>,
+          h3: ({ children }) => <h3 className="font-semibold mt-8 mb-4" style={{ fontSize: '1.5em' }}>{children}</h3>,
+          h4: ({ children }) => <h4 className="font-semibold mt-6 mb-4" style={{ fontSize: '1.25em' }}>{children}</h4>,
+          h5: ({ children }) => <h5 className="font-semibold mt-4 mb-2" style={{ fontSize: '1.125em' }}>{children}</h5>,
+          h6: ({ children }) => <h6 className="font-semibold mt-4 mb-2" style={{ fontSize: '1em' }}>{children}</h6>,
           a: ({ href, children }) => (
             <a
               href={href}
@@ -111,7 +124,7 @@ export function EnhancedMarkdownRenderer({
           table: ({ children }) => (
             <div className="my-6 overflow-hidden rounded-lg border border-border">
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full" style={{ fontSize: 'inherit' }}>
                   {children}
                 </table>
               </div>
@@ -120,8 +133,8 @@ export function EnhancedMarkdownRenderer({
           thead: ({ children }) => <thead className="bg-muted">{children}</thead>,
           tbody: ({ children }) => <tbody>{children}</tbody>,
           tr: ({ children }) => <tr className="border-b border-border hover:bg-muted/50 last:border-b-0">{children}</tr>,
-          th: ({ children }) => <th className="p-3 text-left font-semibold border-r border-border last:border-r-0">{children}</th>,
-          td: ({ children }) => <td className="p-3 border-r border-border last:border-r-0">{children}</td>,
+          th: ({ children }) => <th className="text-left font-semibold border-r border-border last:border-r-0" style={{ padding: `${0.75 * scaleFactor}rem` }}>{children}</th>,
+          td: ({ children }) => <td className="border-r border-border last:border-r-0" style={{ padding: `${0.75 * scaleFactor}rem` }}>{children}</td>,
           blockquote: ({ children }) => <blockquote className="my-6 pl-4 border-l-4 border-primary bg-muted/50 italic py-2">{children}</blockquote>,
           ul: ({ children }) => <ul className="my-4 ml-6 list-disc space-y-2">{children}</ul>,
           ol: ({ children }) => <ol className="my-4 ml-6 list-decimal space-y-2">{children}</ol>,

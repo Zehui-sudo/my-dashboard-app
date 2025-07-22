@@ -15,12 +15,14 @@ interface InteractiveCodeBlockProps {
   language: 'python' | 'javascript';
   initialCode: string;
   sectionId: string;
+  fontSize?: number;
 }
 
 export function InteractiveCodeBlock({ 
   language, 
   initialCode, 
-  sectionId 
+  sectionId,
+  fontSize = 16
 }: InteractiveCodeBlockProps) {
   // Subscribe only to the specific code snippet for this section
   const userCode = useLearningStore((state) => state.userCodeSnippets[sectionId]);
@@ -214,6 +216,7 @@ export function InteractiveCodeBlock({
               className="border-0"
               searchTerm={searchTerm}
               enableSearch={showSearch}
+              fontSize={fontSize}
             />
           </div>
           
@@ -265,7 +268,7 @@ export function InteractiveCodeBlock({
                   输出结果
                 </div>
                 <ScrollArea className="h-[150px]">
-                  <pre className="p-3 text-sm font-mono whitespace-pre-wrap">{output}</pre>
+                  <pre className="p-3 font-mono whitespace-pre-wrap" style={{ fontSize: `${fontSize * 0.875}px` }}>{output}</pre>
                 </ScrollArea>
               </div>
             )}

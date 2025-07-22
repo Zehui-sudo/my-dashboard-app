@@ -19,10 +19,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Home, ChevronLeft, ChevronRight, BookOpen } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Home, ChevronLeft, ChevronRight, BookOpen, Type } from "lucide-react";
 
 export function LearnNavBar() {
-  const { currentPath, currentSection, loadPath, loadSection } = useLearningStore();
+  const { currentPath, currentSection, loadPath, loadSection, fontSize, setFontSize } = useLearningStore();
 
   const {
     allSections,
@@ -155,6 +164,30 @@ export function LearnNavBar() {
               {currentSectionIndex + 1}/{allSections.length}
             </span>
           </div>
+          <DropdownMenu>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Type className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>调节字体大小</p>
+              </TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuLabel>字体大小</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup value={fontSize.toString()} onValueChange={(value) => setFontSize(parseInt(value))}>
+                <DropdownMenuRadioItem value="14">14px 小</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="16">16px 默认</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="18">18px 大</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="20">20px 特大</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" asChild>

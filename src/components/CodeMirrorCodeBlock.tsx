@@ -76,6 +76,7 @@ interface CodeMirrorCodeBlockProps {
   className?: string;
   searchTerm?: string;
   enableSearch?: boolean;
+  fontSize?: number;
 }
 
 export const CodeMirrorCodeBlock = memo(function CodeMirrorCodeBlock({
@@ -88,6 +89,7 @@ export const CodeMirrorCodeBlock = memo(function CodeMirrorCodeBlock({
   className = '',
   searchTerm = '',
   enableSearch = false,
+  fontSize = 14,
 }: CodeMirrorCodeBlockProps) {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [highlightCompartment] = useState(new Compartment());
@@ -191,6 +193,11 @@ export const CodeMirrorCodeBlock = memo(function CodeMirrorCodeBlock({
         extensions={[
           theme === 'light' ? githubLight : githubDark,
           themeOverride,
+          EditorView.theme({
+            '&': { fontSize: `${fontSize}px` },
+            '.cm-content': { fontSize: `${fontSize}px` },
+            '.cm-gutters': { fontSize: `${fontSize}px` },
+          }),
           languageExtension,
           EditorView.lineWrapping,
           searchHighlightField,

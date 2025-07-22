@@ -69,6 +69,8 @@ export interface LearningState {
   // Pyodide State
   pyodideStatus: PyodideStatus;
   pyodideError: string | null;
+  // Font Size State
+  fontSize: number;
 }
 
 // AI 对话消息
@@ -100,6 +102,8 @@ export interface LearningActions {
   addMessageToActiveChat: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
   // Pyodide Actions
   loadPyodide: () => Promise<void>;
+  // Font Size Actions
+  setFontSize: (fontSize: number) => void;
 }
 
 // API 响应类型

@@ -13,6 +13,7 @@ export function ContentDisplay() {
   const currentSection = useLearningStore((state) => state.currentSection);
   const loading = useLearningStore((state) => state.loading);
   const error = useLearningStore((state) => state.error);
+  const fontSize = useLearningStore((state) => state.fontSize);
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const currentSectionIdRef = useRef(currentSection?.id);
@@ -77,12 +78,17 @@ export function ContentDisplay() {
 
       {/* Content */}
       <ScrollArea className="flex-1" ref={scrollAreaRef}>
-        <div className="p-6 pt-0 space-y-6 max-w-4xl mx-auto">
+        <div 
+          className="p-6 pt-0 space-y-6 max-w-4xl mx-auto"
+          style={{ 
+            fontSize: `${fontSize}px`,
+            lineHeight: fontSize >= 18 ? 1.8 : 1.6
+          }}>
           {currentSection.contentBlocks.map((block, index) => (
             <div key={`block-${currentSection.id}-${index}`}>
               {block.type === 'markdown' && (
                 <div className="max-w-none">
-                  <EnhancedMarkdownRenderer content={block.content} />
+                  <EnhancedMarkdownRenderer content={block.content} fontSize={fontSize} />
                 </div>
               )}
               
@@ -92,6 +98,7 @@ export function ContentDisplay() {
                   language={block.language}
                   initialCode={block.code}
                   sectionId={currentSection.id}
+                  fontSize={fontSize}
                 />
               )}
             </div>

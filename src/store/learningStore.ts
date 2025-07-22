@@ -119,6 +119,7 @@ export const useLearningStore = create<LearningState & LearningActions>()(
       activeChatSessionId: null,
       pyodideStatus: 'unloaded' as PyodideStatus,
       pyodideError: null,
+      fontSize: 16,
 
       // Actions
       loadPath: async (language: 'python' | 'javascript') => {
@@ -293,6 +294,10 @@ export const useLearningStore = create<LearningState & LearningActions>()(
           });
         }
       },
+
+      setFontSize: (fontSize: number) => {
+        set({ fontSize });
+      },
     }),
     {
       name: 'learning-store',
@@ -301,6 +306,7 @@ export const useLearningStore = create<LearningState & LearningActions>()(
         uiState: state.uiState,
         chatSessions: state.chatSessions,
         activeChatSessionId: state.activeChatSessionId,
+        fontSize: state.fontSize,
       }),
     }
   )
