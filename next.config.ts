@@ -6,6 +6,24 @@ const nextConfig: NextConfig = {
   experimental: {
     externalDir: true,
   },
+  // Add headers for SharedArrayBuffer support (needed for some Pyodide features)
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'credentialless',
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin',
+          },
+        ],
+      },
+    ];
+  },
   // Configure webpack to exclude cherry-studio
   webpack: (config, { isServer }) => {
     if (!isServer) {

@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Play, Copy, Check, AlertTriangle, Loader2, RotateCcw, Search, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CodeMirrorCodeBlock } from './CodeMirrorCodeBlock';
+import { pyodideService } from '@/services/pyodideService';
 
 interface InteractiveCodeBlockProps {
   language: 'python' | 'javascript';
@@ -24,6 +25,8 @@ export function InteractiveCodeBlock({
   // Subscribe only to the specific code snippet for this section
   const userCode = useLearningStore((state) => state.userCodeSnippets[sectionId]);
   const updateUserCode = useLearningStore((state) => state.updateUserCode);
+  const pyodideStatus = useLearningStore((state) => state.pyodideStatus);
+  const pyodideError = useLearningStore((state) => state.pyodideError);
   
   const [code, setCode] = useState(userCode || initialCode);
   const [output, setOutput] = useState('');
@@ -57,39 +60,43 @@ export function InteractiveCodeBlock({
     setShowOutput(true);
 
     try {
-      // Simulate code execution
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Mock execution based on code content
-      const mockExecution = () => {
-        // Simple mock output based on code patterns
-        if (code.includes('print(') || code.includes('console.log(')) {
-          // Extract print statements
-          const printMatches = code.match(/(?:print|console\.log)\s*\(\s*["']([^"']*)["']\s*\)/g);
-          if (printMatches) {
-            return printMatches.map(match => {
-              const content = match.match(/["']([^"']*)["']/);
-              return content ? content[1] : '';
-            }).join('\n');
+      if (language === 'python') {
+        // Check if Pyodide is ready
+        if (pyodideStatus !== 'ready') {
+          if (pyodideStatus === 'error') {
+            throw new Error(pyodideError || 'Pyodide加载失败');
           }
+          throw new Error('Python环境正在加载中，请稍候...');
         }
 
-        if (code.includes('if') && code.includes('print')) {
-          // Mock conditional output
-          if (code.includes('> 0')) {
-            return '正数';
-          } else if (code.includes('< 0')) {
-            return '负数';
-          } else {
-            return 'Hello, World!';
-          }
+        // Execute Python code with Pyodide
+        const result = await pyodideService.runPython(code);
+        
+        if (result.error) {
+          setError(result.error);
+        } else {
+          setOutput(result.output);
         }
+      } else {
+        // JavaScript execution (using eval in a safe way)
+        try {
+          // Create a custom console to capture output
+          const outputs: string[] = [];
+          const customConsole = {
+            log: (...args: any[]) => {
+              outputs.push(args.map(arg => String(arg)).join(' '));
+            }
+          };
 
-        return '代码执行成功！';
-      };
+          // Create a function with the code and custom console
+          const func = new Function('console', code);
+          func(customConsole);
 
-      const result = mockExecution();
-      setOutput(result);
+          setOutput(outputs.join('\n') || '代码执行成功！');
+        } catch (jsError) {
+          throw jsError;
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '代码执行失败');
     } finally {
@@ -215,13 +222,18 @@ export function InteractiveCodeBlock({
               type="button"
               size="sm"
               onClick={handleRunCode}
-              disabled={isRunning}
+              disabled={isRunning || (language === 'python' && pyodideStatus === 'loading')}
               className="flex items-center gap-2"
             >
               {isRunning ? (
                 <>
                   <Loader2 className="h-3 w-3 animate-spin" />
                   运行中...
+                </>
+              ) : language === 'python' && pyodideStatus === 'loading' ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  准备Python环境...
                 </>
               ) : (
                 <>

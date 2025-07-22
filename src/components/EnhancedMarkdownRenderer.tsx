@@ -53,21 +53,36 @@ export function EnhancedMarkdownRenderer({
             return <p className="my-4 text-base leading-relaxed">{children}</p>;
           },
           code: ({ node, className, children, ...props }) => {
-            const match = /language-(\w+)/.exec(className || '');
+            const match = /language-(\w+(?:-\w+)?)/.exec(className || '');
             const codeContent = String(children).replace(/\n$/, '');
 
             // Render interactive code block for specified languages
-            if (match && (match[1] === 'python' || match[1] === 'javascript')) {
-              const sectionId = `markdown-block-${node.position?.start.line || Math.random()}`;
-              return (
-                <div className="my-6">
-                  <InteractiveCodeBlock
-                    language={match[1]}
-                    initialCode={codeContent}
-                    sectionId={sectionId}
-                  />
-                </div>
-              );
+            if (match) {
+              const lang = match[1];
+              // Support both "python" and "interactive-python" formats
+              if (lang === 'interactive-python' || lang === 'python') {
+                const sectionId = `markdown-block-${node.position?.start.line || Math.random()}`;
+                return (
+                  <div className="my-6">
+                    <InteractiveCodeBlock
+                      language="python"
+                      initialCode={codeContent}
+                      sectionId={sectionId}
+                    />
+                  </div>
+                );
+              } else if (lang === 'interactive-javascript' || lang === 'javascript') {
+                const sectionId = `markdown-block-${node.position?.start.line || Math.random()}`;
+                return (
+                  <div className="my-6">
+                    <InteractiveCodeBlock
+                      language="javascript"
+                      initialCode={codeContent}
+                      sectionId={sectionId}
+                    />
+                  </div>
+                );
+              }
             }
 
             // Render inline code

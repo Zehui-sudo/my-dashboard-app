@@ -46,6 +46,9 @@ export interface UIState {
   searchQuery: string;
 }
 
+// Pyodide状态类型
+export type PyodideStatus = 'unloaded' | 'loading' | 'ready' | 'error';
+
 // 全局状态类型
 export interface LearningState {
   currentPath: LearningPath | null;
@@ -63,6 +66,9 @@ export interface LearningState {
   // AI Chat State
   chatSessions: ChatSession[];
   activeChatSessionId: string | null;
+  // Pyodide State
+  pyodideStatus: PyodideStatus;
+  pyodideError: string | null;
 }
 
 // AI 对话消息
@@ -92,6 +98,8 @@ export interface LearningActions {
   deleteChat: (sessionId: string) => void;
   renameChat: (sessionId: string, newTitle: string) => void;
   addMessageToActiveChat: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
+  // Pyodide Actions
+  loadPyodide: () => Promise<void>;
 }
 
 // API 响应类型

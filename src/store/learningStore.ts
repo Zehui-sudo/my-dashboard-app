@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { LearningState, LearningActions, LearningPath, SectionContent, ChatMessage, ChatSession } from '@/types';
+import type { LearningState, LearningActions, LearningPath, SectionContent, ChatMessage, ChatSession, PyodideStatus } from '@/types';
+import { pyodideService } from '@/services/pyodideService';
 
 // Mock API functions - replace with real API calls
 const mockLearningApi = {
@@ -116,6 +117,8 @@ export const useLearningStore = create<LearningState & LearningActions>()(
       },
       chatSessions: [],
       activeChatSessionId: null,
+      pyodideStatus: 'unloaded' as PyodideStatus,
+      pyodideError: null,
 
       // Actions
       loadPath: async (language: 'python' | 'javascript') => {
@@ -140,6 +143,11 @@ export const useLearningStore = create<LearningState & LearningActions>()(
           // If no chats exist, create a default one
           if (get().chatSessions.length === 0) {
             get().createNewChat();
+          }
+
+          // Load Pyodide for Python language
+          if (language === 'python' && get().pyodideStatus === 'unloaded') {
+            get().loadPyodide();
           }
 
         } catch (error) {
@@ -265,6 +273,26 @@ export const useLearningStore = create<LearningState & LearningActions>()(
           };
         });
       },
+
+      // Pyodide Actions
+      loadPyodide: async () => {
+        const state = get();
+        if (state.pyodideStatus !== 'unloaded') {
+          return;
+        }
+
+        set({ pyodideStatus: 'loading', pyodideError: null });
+
+        try {
+          await pyodideService.loadPyodide();
+          set({ pyodideStatus: 'ready', pyodideError: null });
+        } catch (error) {
+          set({
+            pyodideStatus: 'error',
+            pyodideError: error instanceof Error ? error.message : 'Failed to load Pyodide'
+          });
+        }
+      },
     }),
     {
       name: 'learning-store',
@@ -284,4 +312,6 @@ useLearningStore.setState({
   currentSection: null,
   loading: { path: false, section: false },
   error: { path: null, section: null },
+  pyodideStatus: 'unloaded',
+  pyodideError: null,
 });
