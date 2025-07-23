@@ -4,9 +4,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Card } from '@/components/ui/card';
-import { Send, Bot, User, Loader2, Plus, MoreHorizontal, Trash2, Edit } from 'lucide-react';
+import { Send, Loader2, Plus, MoreHorizontal, Trash2, Edit } from 'lucide-react';
 import { useLearningStore } from '@/store/learningStore';
 import type { ChatMessage } from '@/types';
 import {
@@ -17,6 +15,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Input } from './ui/input';
+import { ContextReference } from './ContextReference';
 
 export function AIChatSidebar() {
   const {
@@ -27,6 +26,8 @@ export function AIChatSidebar() {
     switchChat,
     deleteChat,
     renameChat,
+    selectedContent,
+    setSelectedContent,
   } = useLearningStore();
   
   const activeSession = chatSessions.find(s => s.id === activeChatSessionId);
@@ -50,10 +51,12 @@ export function AIChatSidebar() {
     const userMessage: Omit<ChatMessage, 'id' | 'timestamp'> = {
       content: inputMessage,
       sender: 'user',
+      contextReference: selectedContent || undefined,
     };
 
     addMessageToActiveChat(userMessage);
     setInputMessage('');
+    setSelectedContent(null);
     setIsTyping(true);
 
     // Simulate AI response
@@ -104,16 +107,15 @@ export function AIChatSidebar() {
   return (
     <div className="h-full flex flex-col bg-background rounded-lg">
       {/* Header */}
-      <div className="p-4 border-b flex justify-between items-center">
-        <h2 className="text-lg font-semibold">AI 助手</h2>
-        <div className="flex items-center gap-2">
-          <Button size="icon" variant="ghost" onClick={createNewChat}>
-            <Plus className="h-5 w-5" />
+      <div className="p-3 border-b flex justify-end items-center">
+        <div className="flex items-center gap-1">
+          <Button size="icon" variant="ghost" onClick={createNewChat} className="h-8 w-8">
+            <Plus className="h-4 w-4" />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost">
-                <MoreHorizontal className="h-5 w-5" />
+              <Button size="icon" variant="ghost" className="h-8 w-8">
+                <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">
@@ -156,28 +158,28 @@ export function AIChatSidebar() {
 
       {/* Messages */}
       <ScrollArea className="flex-1" ref={scrollAreaRef}>
-        <div className="p-4 space-y-4">
+        <div className="p-3 space-y-3">
           {messages.map((message) => (
-            <div key={message.id} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : ''}`}>
-              {message.sender === 'ai' && (
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                    <Bot className="h-4 w-4" />
-                  </AvatarFallback>
-                </Avatar>
-              )}
-              
-              <div className={`max-w-[80%] ${message.sender === 'user' ? 'order-first' : ''}`}>
+            <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className="max-w-[85%] space-y-1">
+                {message.contextReference && message.sender === 'user' && (
+                  <div className="mb-2">
+                    <ContextReference 
+                      reference={message.contextReference} 
+                      onClear={() => {}} 
+                    />
+                  </div>
+                )}
                 <div
-                  className={`rounded-lg px-4 py-2 text-sm ${
+                  className={`rounded-lg px-3 py-2 text-sm ${
                     message.sender === 'user'
-                      ? 'bg-primary text-primary-foreground'
+                      ? 'bg-primary text-primary-foreground ml-auto'
                       : 'bg-muted'
                   }`}
                 >
                   <div className="whitespace-pre-wrap">{message.content}</div>
                 </div>
-                <div className={`text-xs text-muted-foreground mt-1 ${
+                <div className={`text-xs text-muted-foreground px-1 ${
                   message.sender === 'user' ? 'text-right' : ''
                 }`}>
                   {new Date(message.timestamp).toLocaleTimeString([], { 
@@ -186,25 +188,12 @@ export function AIChatSidebar() {
                   })}
                 </div>
               </div>
-
-              {message.sender === 'user' && (
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-secondary text-secondary-foreground text-xs">
-                    <User className="h-4 w-4" />
-                  </AvatarFallback>
-                </Avatar>
-              )}
             </div>
           ))}
 
           {isTyping && (
-            <div className="flex gap-3">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                  <Bot className="h-4 w-4" />
-                </AvatarFallback>
-              </Avatar>
-              <div className="bg-muted rounded-lg px-4 py-2">
+            <div className="flex justify-start">
+              <div className="bg-muted rounded-lg px-3 py-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-3 w-3 animate-spin" />
                   AI正在思考...
@@ -216,14 +205,21 @@ export function AIChatSidebar() {
       </ScrollArea>
 
       {/* Input Area */}
-      <Card className="p-4 border-t rounded-lg">
+      <div className="p-3 border-t space-y-2">
+        {selectedContent && (
+          <ContextReference 
+            reference={selectedContent} 
+            onClear={() => setSelectedContent(null)} 
+          />
+        )}
         <div className="flex gap-2">
           <Textarea
+            data-chat-input
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder={activeChatSessionId ? "输入你的问题..." : "请先新建或选择一个对话"}
-            className="min-h-[40px] max-h-[120px] resize-none"
+            className="min-h-[36px] max-h-[100px] resize-none text-sm"
             rows={1}
             disabled={!activeChatSessionId || isTyping}
           />
@@ -231,15 +227,15 @@ export function AIChatSidebar() {
             size="sm"
             onClick={handleSendMessage}
             disabled={!inputMessage.trim() || isTyping || !activeChatSessionId}
-            className="self-end"
+            className="self-end h-9 w-9 p-0"
           >
             <Send className="h-4 w-4" />
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          按 Enter 发送，Shift+Enter 换行
+        <p className="text-xs text-muted-foreground">
+          按 Enter 发送，Shift+Enter 换行 | Command+L 引用选中内容
         </p>
-      </Card>
+      </div>
     </div>
   );
 }

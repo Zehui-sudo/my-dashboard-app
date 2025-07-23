@@ -43,11 +43,11 @@ class PyodideService {
   private async doLoadPyodide(): Promise<PyodideInterface> {
     try {
       // Load Pyodide script
-      await this.loadScript('https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js');
+      await this.loadScript('https://fastly.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js');
 
       // Initialize Pyodide
       this.pyodide = await window.loadPyodide({
-        indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/',
+        indexURL: 'https://fastly.jsdelivr.net/pyodide/v0.26.4/full/',
       });
 
       // Set up Python environment

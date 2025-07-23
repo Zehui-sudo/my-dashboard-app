@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { LearningState, LearningActions, LearningPath, SectionContent, ChatMessage, ChatSession, PyodideStatus } from '@/types';
+import type { LearningState, LearningActions, LearningPath, SectionContent, ChatMessage, ChatSession, PyodideStatus, ContextReference } from '@/types';
 import { pyodideService } from '@/services/pyodideService';
 
 // Mock API functions - replace with real API calls
@@ -89,10 +89,12 @@ const mockLearningApi = {
   }
 };
 
-const createWelcomeMessage = (topic?: string): ChatMessage => ({
+const createWelcomeMessage = (userName?: string, topic?: string): ChatMessage => ({
   id: Date.now().toString(),
   sender: 'ai',
-  content: `你好！我是你的AI学习助手。${topic ? `关于“${topic}”，` : ''}你有什么问题吗？我可以帮你解释概念、提供示例，或者解答你的疑问。`,
+  content: userName 
+    ? `Hi, ${userName}! 我是你的AI学习助手。${topic ? `关于"${topic}"，` : ''}你有什么问题吗？`
+    : `你好！我是你的AI学习助手。${topic ? `关于"${topic}"，` : ''}你有什么问题吗？我可以帮你解释概念、提供示例，或者解答你的疑问。`,
   timestamp: Date.now(),
 });
 
@@ -120,6 +122,8 @@ export const useLearningStore = create<LearningState & LearningActions>()(
       pyodideStatus: 'unloaded' as PyodideStatus,
       pyodideError: null,
       fontSize: 16,
+      selectedContent: null,
+      userName: undefined,
 
       // Actions
       loadPath: async (language: 'python' | 'javascript') => {
@@ -205,10 +209,11 @@ export const useLearningStore = create<LearningState & LearningActions>()(
 
       // --- Chat Actions ---
       createNewChat: () => {
+        const state = get();
         const newSession: ChatSession = {
           id: `chat-${Date.now()}`,
           title: '新的对话',
-          messages: [createWelcomeMessage()],
+          messages: [createWelcomeMessage(state.userName)],
           createdAt: Date.now(),
         };
         set(state => ({
@@ -298,6 +303,16 @@ export const useLearningStore = create<LearningState & LearningActions>()(
       setFontSize: (fontSize: number) => {
         set({ fontSize });
       },
+
+      // Context Selection Actions
+      setSelectedContent: (content: ContextReference | null) => {
+        set({ selectedContent: content });
+      },
+
+      // User Actions
+      setUserName: (name: string) => {
+        set({ userName: name });
+      },
     }),
     {
       name: 'learning-store',
@@ -307,6 +322,7 @@ export const useLearningStore = create<LearningState & LearningActions>()(
         chatSessions: state.chatSessions,
         activeChatSessionId: state.activeChatSessionId,
         fontSize: state.fontSize,
+        userName: state.userName,
       }),
     }
   )
@@ -320,4 +336,5 @@ useLearningStore.setState({
   error: { path: null, section: null },
   pyodideStatus: 'unloaded',
   pyodideError: null,
+  selectedContent: null,
 });

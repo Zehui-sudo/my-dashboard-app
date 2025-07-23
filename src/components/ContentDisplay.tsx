@@ -8,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, BookOpen } from 'lucide-react';
 import { EnhancedMarkdownRenderer } from './EnhancedMarkdownRenderer';
 import { InteractiveCodeBlock } from './InteractiveCodeBlock';
+import { useTextSelection } from '@/hooks/useTextSelection';
 
 export function ContentDisplay() {
   const currentSection = useLearningStore((state) => state.currentSection);
@@ -16,7 +17,11 @@ export function ContentDisplay() {
   const fontSize = useLearningStore((state) => state.fontSize);
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const currentSectionIdRef = useRef(currentSection?.id);
+  
+  // Enable text selection
+  useTextSelection(contentRef);
 
   // Only reset scroll when section changes, not when content updates
   useEffect(() => {
@@ -79,6 +84,7 @@ export function ContentDisplay() {
       {/* Content */}
       <ScrollArea className="flex-1" ref={scrollAreaRef}>
         <div 
+          ref={contentRef}
           className="p-6 pt-0 space-y-6 max-w-4xl mx-auto"
           style={{ 
             fontSize: `${fontSize}px`,

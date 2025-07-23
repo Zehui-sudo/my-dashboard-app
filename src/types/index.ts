@@ -71,6 +71,10 @@ export interface LearningState {
   pyodideError: string | null;
   // Font Size State
   fontSize: number;
+  // Context Selection State
+  selectedContent: ContextReference | null;
+  // User Info
+  userName?: string;
 }
 
 // AI 对话消息
@@ -79,6 +83,14 @@ export interface ChatMessage {
   content: string;
   sender: 'user' | 'ai';
   timestamp: number; // 使用时间戳以方便序列化
+  contextReference?: ContextReference; // 引用的上下文内容
+}
+
+// 上下文引用
+export interface ContextReference {
+  text: string; // 引用的文本内容
+  source?: string; // 来源（如章节标题）
+  type?: 'markdown' | 'code'; // 内容类型
 }
 
 // AI 对话会话
@@ -104,6 +116,10 @@ export interface LearningActions {
   loadPyodide: () => Promise<void>;
   // Font Size Actions
   setFontSize: (fontSize: number) => void;
+  // Context Selection Actions
+  setSelectedContent: (content: ContextReference | null) => void;
+  // User Actions
+  setUserName: (name: string) => void;
 }
 
 // API 响应类型
