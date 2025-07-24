@@ -66,6 +66,14 @@ export interface LearningState {
   // AI Chat State
   chatSessions: ChatSession[];
   activeChatSessionId: string | null;
+  aiProvider: AIProvider;
+  aiConfig: {
+    temperature: number;
+    maxTokens: number;
+    streamEnabled: boolean;
+  };
+  streamingMessageId: string | null;
+  isGenerating: boolean;
   // Pyodide State
   pyodideStatus: PyodideStatus;
   pyodideError: string | null;
@@ -118,8 +126,64 @@ export interface LearningActions {
   setFontSize: (fontSize: number) => void;
   // Context Selection Actions
   setSelectedContent: (content: ContextReference | null) => void;
+  // AI 相关 actions
+  setAIProvider: (provider: AIProvider) => void;
+  updateAIConfig: (config: Partial<{temperature: number, maxTokens: number, streamEnabled: boolean}>) => void;
+  sendChatMessage: (content: string, contextRef?: ContextReference) => Promise<void>;
+  cancelStreaming: () => void;
   // User Actions
   setUserName: (name: string) => void;
+}
+
+// AI 提供商枚举
+export enum AIProvider {
+  OPENAI = 'openai',
+  ANTHROPIC = 'anthropic',
+  DEEPSEEK = 'deepseek',
+  DOUBAO = 'doubao'
+}
+
+// AI 配置接口
+export interface AIConfig {
+  temperature: number;
+  maxTokens: number;
+  streamEnabled: boolean;
+  model?: string;
+}
+
+// Chat API 请求接口
+export interface ChatAPIRequest {
+  messages: ChatMessage[];
+  provider: AIProvider;
+  model?: string;
+  stream?: boolean;
+  temperature?: number;
+  maxTokens?: number;
+  contextReference?: ContextReference;
+}
+
+// Chat API 响应接口
+export interface ChatAPIResponse {
+  content: string;
+  provider: AIProvider;
+  model: string;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+// 流式响应块
+export interface StreamChunk {
+  id: string;
+  content: string;
+  done: boolean;
+  error?: string;
 }
 
 // API 响应类型

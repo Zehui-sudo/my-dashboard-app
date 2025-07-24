@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { LearningState, LearningActions, LearningPath, SectionContent, ChatMessage, ChatSession, PyodideStatus, ContextReference } from '@/types';
+import { AIProvider } from '@/types';
 import { pyodideService } from '@/services/pyodideService';
 
 // Mock API functions - replace with real API calls
@@ -124,6 +125,15 @@ export const useLearningStore = create<LearningState & LearningActions>()(
       fontSize: 16,
       selectedContent: null,
       userName: undefined,
+      // AI 相关状态
+      aiProvider: AIProvider.OPENAI,
+      aiConfig: {
+        temperature: 0.7,
+        maxTokens: 2000,
+        streamEnabled: true,
+      },
+      streamingMessageId: null as string | null,
+      isGenerating: false,
 
       // Actions
       loadPath: async (language: 'python' | 'javascript') => {
@@ -309,6 +319,191 @@ export const useLearningStore = create<LearningState & LearningActions>()(
         set({ selectedContent: content });
       },
 
+      // AI 相关 Actions
+      setAIProvider: (provider: AIProvider) => {
+        set({ aiProvider: provider });
+      },
+
+      updateAIConfig: (config: Partial<{temperature: number, maxTokens: number, streamEnabled: boolean}>) => {
+        set(state => ({
+          aiConfig: { ...state.aiConfig, ...config }
+        }));
+      },
+
+      sendChatMessage: async (content: string, contextRef?: ContextReference) => {
+        const state = get();
+        if (!state.activeChatSessionId || state.isGenerating) return;
+
+        // 添加用户消息
+        const userMessage: Omit<ChatMessage, 'id' | 'timestamp'> = {
+          content,
+          sender: 'user',
+          contextReference: contextRef,
+        };
+        state.addMessageToActiveChat(userMessage);
+
+        // 设置生成状态
+        set({ isGenerating: true });
+
+        // 获取当前会话的所有消息
+        const activeSession = state.chatSessions.find(s => s.id === state.activeChatSessionId);
+        if (!activeSession) return;
+
+        // 创建AI消息占位符
+        const aiMessage: Omit<ChatMessage, 'id' | 'timestamp'> = {
+          content: '',
+          sender: 'ai',
+        };
+        
+        // 添加AI消息占位符
+        state.addMessageToActiveChat(aiMessage);
+        const aiMessageId = get().chatSessions.find(s => s.id === state.activeChatSessionId)?.messages.slice(-1)[0]?.id || '';
+        set({ streamingMessageId: aiMessageId });
+
+        try {
+          // 获取当前最新的会话状态（包含用户消息，不包含AI占位符）
+          const currentSession = get().chatSessions.find(s => s.id === state.activeChatSessionId);
+          if (!currentSession) return;
+          
+          const messages = currentSession.messages;
+
+          if (state.aiConfig.streamEnabled) {
+            // 流式响应
+            const response = await fetch('/api/chat', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                messages,
+                provider: state.aiProvider,
+                stream: true,
+                temperature: state.aiConfig.temperature,
+                maxTokens: state.aiConfig.maxTokens,
+                contextReference: contextRef,
+              }),
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to send message');
+            }
+
+            const reader = response.body?.getReader();
+            if (!reader) throw new Error('No response stream');
+
+            const decoder = new TextDecoder();
+            let accumulatedContent = '';
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              const chunk = decoder.decode(value);
+              const lines = chunk.split('\n');
+
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6);
+                  if (data === '[DONE]') continue;
+
+                  try {
+                    const parsed = JSON.parse(data);
+                    if (parsed.content) {
+                      accumulatedContent += parsed.content;
+                      
+                      // 更新AI消息内容
+                      set(state => ({
+                        chatSessions: state.chatSessions.map(session => {
+                          if (session.id === state.activeChatSessionId) {
+                            return {
+                              ...session,
+                              messages: session.messages.map(msg => {
+                                if (msg.id === aiMessageId) {
+                                  return { ...msg, content: accumulatedContent };
+                                }
+                                return msg;
+                              }),
+                            };
+                          }
+                          return session;
+                        }),
+                      }));
+                    }
+                  } catch (e) {
+                    // Skip invalid JSON
+                  }
+                }
+              }
+            }
+          } else {
+            // 非流式响应
+            const response = await fetch('/api/chat', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                messages,
+                provider: state.aiProvider,
+                stream: false,
+                temperature: state.aiConfig.temperature,
+                maxTokens: state.aiConfig.maxTokens,
+                contextReference: contextRef,
+              }),
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to send message');
+            }
+
+            const data = await response.json();
+            
+            set(state => ({
+              chatSessions: state.chatSessions.map(session => {
+                if (session.id === state.activeChatSessionId) {
+                  return {
+                    ...session,
+                    messages: session.messages.map(msg => {
+                      if (msg.id === aiMessageId) {
+                        return { ...msg, content: data.content };
+                      }
+                      return msg;
+                    }),
+                  };
+                }
+                return session;
+              }),
+            }));
+          }
+        } catch (error) {
+          console.error('Failed to send chat message:', error);
+          
+          // 更新错误消息
+          set(state => ({
+            chatSessions: state.chatSessions.map(session => {
+              if (session.id === state.activeChatSessionId) {
+                return {
+                  ...session,
+                  messages: session.messages.map(msg => {
+                    if (msg.id === aiMessageId) {
+                      return { ...msg, content: '抱歉，我无法处理您的请求。请稍后再试。' };
+                    }
+                    return msg;
+                  }),
+                };
+              }
+              return session;
+            }),
+          }));
+        } finally {
+          set({ isGenerating: false, streamingMessageId: null });
+        }
+      },
+
+      cancelStreaming: () => {
+        set({ isGenerating: false, streamingMessageId: null });
+      },
+
       // User Actions
       setUserName: (name: string) => {
         set({ userName: name });
@@ -323,7 +518,9 @@ export const useLearningStore = create<LearningState & LearningActions>()(
         activeChatSessionId: state.activeChatSessionId,
         fontSize: state.fontSize,
         userName: state.userName,
-      }),
+        aiProvider: state.aiProvider,
+        aiConfig: state.aiConfig,
+      } as any),
     }
   )
 );
