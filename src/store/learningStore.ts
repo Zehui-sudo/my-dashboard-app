@@ -282,6 +282,22 @@ export const useLearningStore = create<LearningState & LearningActions>()(
         });
       },
 
+      updateMessageContent: (sessionId: string, messageId: string, content: string) => {
+        set(state => ({
+          chatSessions: state.chatSessions.map(session => {
+            if (session.id === sessionId) {
+              return {
+                ...session,
+                messages: session.messages.map(message =>
+                  message.id === messageId ? { ...message, content } : message
+                ),
+              };
+            }
+            return session;
+          }),
+        }));
+      },
+
       // Pyodide Actions
       loadPyodide: async () => {
         const state = get();
@@ -336,59 +352,71 @@ export const useLearningStore = create<LearningState & LearningActions>()(
           contextReference: state.selectedContent || undefined,
         });
 
+        // Add a placeholder for AI response
+        const aiMessageId = `ai-${Date.now()}`;
+        get().addMessageToActiveChat({
+          id: aiMessageId,
+          content: '▍', // Placeholder for streaming
+          sender: 'ai',
+        });
+
         set({ sendingMessage: true });
 
         try {
-          // Get current chat messages
-          // Get the freshest session state right before the API call
           const activeSession = get().chatSessions.find(s => s.id === activeSessionId);
           if (!activeSession) throw new Error('No active session');
 
-          // Call API with the up-to-date messages from the store
           const response = await fetch('/api/chat', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              messages: activeSession.messages,
+              messages: activeSession.messages.filter(m => m.id !== aiMessageId), // Exclude placeholder
               provider: state.aiProvider,
               contextReference: state.selectedContent,
             }),
           });
 
-          if (!response.ok) {
+          if (!response.ok || !response.body) {
             throw new Error(`API error: ${response.status}`);
           }
 
-          const data = await response.json();
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let accumulatedContent = '';
 
-          // Add AI response
-          get().addMessageToActiveChat({
-            content: data.content,
-            sender: 'ai',
-          });
-        } catch (error) {
-          console.error('Chat error:', error);
-          let errorMessage = '抱歉，发送消息时出现错误。请稍后重试。';
-          if (error instanceof Error) {
-            // Attempt to parse the response body if it's a fetch error
-            try {
-              // This is a bit of a hack, but we're assuming the error might be from our API route
-              // and we can get more details from the response.
-              const responseBody = JSON.parse(error.message.substring(error.message.indexOf('{')));
-              if (responseBody.details) {
-                errorMessage = `错误: ${responseBody.details}`;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            const chunk = decoder.decode(value, { stream: true });
+            
+            // OpenAI streaming sends data chunks that look like: data: {"id":"...","choices":[{"delta":{"content":"..."}}]}
+            const lines = chunk.split('\n').filter(line => line.trim().startsWith('data:'));
+            
+            for (const line of lines) {
+              const jsonStr = line.replace(/^data: /, '');
+              if (jsonStr === '[DONE]') {
+                break;
               }
-            } catch (e) {
-              // Could not parse, use the default error message
+              try {
+                const parsed = JSON.parse(jsonStr);
+                const delta = parsed.choices[0]?.delta?.content || '';
+                if (delta) {
+                  accumulatedContent += delta;
+                  get().updateMessageContent(activeSessionId, aiMessageId, accumulatedContent + '▍');
+                }
+              } catch (e) {
+                console.error('Failed to parse stream chunk:', jsonStr);
+              }
             }
           }
-          // Add error message
-          get().addMessageToActiveChat({
-            content: errorMessage,
-            sender: 'ai',
-          });
+          // Remove the typing cursor at the end
+          get().updateMessageContent(activeSessionId, aiMessageId, accumulatedContent);
+
+        } catch (error) {
+          console.error('Chat error:', error);
+          const errorMessage = '抱歉，发送消息时出现错误。请稍后重试。';
+          get().updateMessageContent(activeSessionId, aiMessageId, errorMessage);
         } finally {
           set({ sendingMessage: false });
         }

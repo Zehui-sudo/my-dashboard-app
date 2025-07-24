@@ -114,7 +114,8 @@ export interface LearningActions {
   switchChat: (sessionId: string) => void;
   deleteChat: (sessionId: string) => void;
   renameChat: (sessionId: string, newTitle: string) => void;
-  addMessageToActiveChat: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
+  addMessageToActiveChat: (message: Partial<ChatMessage> & { sender: 'user' | 'ai', content: string }) => void;
+  updateMessageContent: (sessionId: string, messageId: string, content: string) => void;
   // AI Provider Actions
   setAIProvider: (provider: AIProviderType) => void;
   sendChatMessage: (content: string) => Promise<void>;

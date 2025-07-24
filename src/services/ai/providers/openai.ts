@@ -36,12 +36,12 @@ export class OpenAIProvider extends AIProvider {
     }));
   }
 
-  async chat(request: ChatRequest): Promise<ChatResponse> {
+  async chat(request: ChatRequest): Promise<ChatResponse | ReadableStream> {
     if (!this.isConfigured()) {
       throw new Error('OpenAI API key not configured');
     }
 
-    const { messages, model = this.model, temperature = 0.7, maxTokens = 2000, contextReference } = request;
+    const { messages, model = this.model, temperature = 0.7, maxTokens = 2000, contextReference, stream = false } = request;
 
     // Add context if provided
     let formattedMessages = this.formatMessages(messages);
@@ -65,12 +65,20 @@ export class OpenAIProvider extends AIProvider {
           messages: formattedMessages,
           temperature,
           max_tokens: maxTokens,
+          stream,
         }),
       });
 
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error?.message || `OpenAI API error: ${response.status}`);
+      }
+
+      if (stream) {
+        if (!response.body) {
+          throw new Error('Response body is null for streaming request');
+        }
+        return response.body;
       }
 
       const data = await response.json();

@@ -8,6 +8,7 @@ export interface ChatRequest {
   temperature?: number;
   maxTokens?: number;
   contextReference?: ContextReference;
+  stream?: boolean;
 }
 
 export interface ChatResponse {
@@ -22,7 +23,7 @@ export interface ChatResponse {
 }
 
 export abstract class AIProvider {
-  abstract chat(request: ChatRequest): Promise<ChatResponse>;
+  abstract chat(request: ChatRequest): Promise<ChatResponse | ReadableStream>;
   abstract getDefaultModel(): string;
   abstract isConfigured(): boolean;
 }

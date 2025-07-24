@@ -51,15 +51,36 @@ export function AIChatSidebar() {
   
   const activeSession = chatSessions.find(s => s.id === activeChatSessionId);
   const messages = useMemo(() => activeSession?.messages ?? [], [activeSession]);
+  const lastMessage = messages[messages.length - 1];
 
   const [inputMessage, setInputMessage] = useState('');
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messageContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    const scrollViewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (!messageContainerRef.current || !scrollViewport) return;
+
+    const scrollToBottom = () => {
+      scrollViewport.scrollTop = scrollViewport.scrollHeight;
+    };
+
+    // Initial scroll to bottom
+    scrollToBottom();
+
+    // Use MutationObserver to scroll to bottom whenever the content changes
+    const observer = new MutationObserver(scrollToBottom);
+    observer.observe(messageContainerRef.current, {
+      childList: true,
+      subtree: true,
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [activeChatSessionId]); // Re-observe when chat session changes
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || !activeChatSessionId || sendingMessage) return;
@@ -157,8 +178,8 @@ export function AIChatSidebar() {
 
       {/* Messages */}
       <div className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full">
-          <div className="p-3 space-y-3">
+        <ScrollArea className="h-full" ref={scrollAreaRef}>
+          <div className="p-3 space-y-3" ref={messageContainerRef}>
             {messages.map((message) => (
               <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className="max-w-[95%] space-y-1">
@@ -190,18 +211,6 @@ export function AIChatSidebar() {
                 </div>
               </div>
             ))}
-            
-            {sendingMessage && (
-              <div className="flex justify-start">
-                <div className="bg-muted rounded-lg px-3 py-2">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    AI正在思考...
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
       </div>

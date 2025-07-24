@@ -35,12 +35,12 @@ export class AnthropicProvider extends AIProvider {
     return formatted;
   }
 
-  async chat(request: ChatRequest): Promise<ChatResponse> {
+  async chat(request: ChatRequest): Promise<ChatResponse | ReadableStream> {
     if (!this.isConfigured()) {
       throw new Error('Anthropic API key not configured');
     }
 
-    const { messages, model = this.model, temperature = 0.7, maxTokens = 2000, contextReference } = request;
+    const { messages, model = this.model, temperature = 0.7, maxTokens = 2000, contextReference, stream = false } = request;
 
     let formattedMessages = this.formatMessages(messages);
     
@@ -64,12 +64,20 @@ export class AnthropicProvider extends AIProvider {
           system: systemMessage,
           temperature,
           max_tokens: maxTokens,
+          stream,
         }),
       });
 
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error?.message || `Anthropic API error: ${response.status}`);
+      }
+
+      if (stream) {
+        if (!response.body) {
+          throw new Error('Response body is null for streaming request');
+        }
+        return response.body;
       }
 
       const data = await response.json();

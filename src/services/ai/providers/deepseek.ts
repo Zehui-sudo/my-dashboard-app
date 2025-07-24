@@ -14,9 +14,16 @@ export class DeepSeekProvider extends OpenAIProvider {
     return !!process.env.DEEPSEEK_API_KEY;
   }
 
-  async chat(request: ChatRequest): Promise<ChatResponse> {
-    // DeepSeek uses OpenAI-compatible API
+  async chat(request: ChatRequest): Promise<ChatResponse | ReadableStream> {
+    // DeepSeek uses OpenAI-compatible API, so we can call the parent method
     const response = await super.chat(request);
+
+    // If the response is a stream, we don't need to modify it.
+    if (response instanceof ReadableStream) {
+      return response;
+    }
+
+    // If it's a regular response, update the provider field.
     return {
       ...response,
       provider: 'deepseek',
