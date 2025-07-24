@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Loader2, Plus, MoreHorizontal, Trash2, Edit } from 'lucide-react';
+import { Send, Loader2, Plus, MoreHorizontal, Trash2, Edit, Bot } from 'lucide-react';
 import { useLearningStore } from '@/store/learningStore';
 import type { ChatMessage } from '@/types';
 import {
@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from './ui/input';
 import { ContextReference } from './ContextReference';
+import { callAI } from '@/services/aiService';
+import { AI_PROVIDERS } from '@/config/aiProviders';
 
 export function AIChatSidebar() {
   const {
@@ -28,6 +30,10 @@ export function AIChatSidebar() {
     renameChat,
     selectedContent,
     setSelectedContent,
+    aiProvider,
+    aiModel,
+    setAiProvider,
+    setAiModel,
   } = useLearningStore();
   
   const activeSession = chatSessions.find(s => s.id === activeChatSessionId);
@@ -37,7 +43,9 @@ export function AIChatSidebar() {
   const [isTyping, setIsTyping] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -47,6 +55,11 @@ export function AIChatSidebar() {
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || !activeChatSessionId) return;
+
+    // Cancel any ongoing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
 
     const userMessage: Omit<ChatMessage, 'id' | 'timestamp'> = {
       content: inputMessage,
@@ -58,17 +71,49 @@ export function AIChatSidebar() {
     setInputMessage('');
     setSelectedContent(null);
     setIsTyping(true);
+    setError(null);
+    
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse = generateAIResponse(inputMessage);
+    try {
+      // Get all messages in the active session
+      const sessionMessages = activeSession?.messages 
+        ? [...activeSession.messages, userMessage as ChatMessage] 
+        : [userMessage as ChatMessage];
+
+      // Call AI service
+      const aiResponse = await callAI(
+        aiProvider,
+        aiModel,
+        sessionMessages,
+        abortControllerRef.current.signal
+      );
+
       const aiMessage: Omit<ChatMessage, 'id' | 'timestamp'> = {
         content: aiResponse,
         sender: 'ai',
       };
+      
       addMessageToActiveChat(aiMessage);
+    } catch (err) {
+      console.error('AI API error:', err);
+      
+      let errorMessage = 'AI服务出现错误，请稍后重试';
+      
+      if (err instanceof Error) {
+        if (err.name === 'AIError') {
+          errorMessage = err.message;
+        } else if (err.name === 'AbortError') {
+          errorMessage = '请求已被取消';
+        }
+      }
+      
+      setError(errorMessage);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+      abortControllerRef.current = null;
+    }
   };
 
   const generateAIResponse = (question: string) => {
@@ -104,11 +149,71 @@ export function AIChatSidebar() {
     }
   };
 
+  const handleCancelRequest = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      setIsTyping(false);
+    }
+  };
+
+  const handleProviderChange = (providerId: string) => {
+    setAiProvider(providerId as import('@/config/aiProviders').AIProviderId);
+    
+    // Also update the model to the provider's default model
+    const provider = AI_PROVIDERS.find(p => p.id === providerId);
+    if (provider && provider.models.length > 0) {
+      setAiModel(provider.models[0].id as import('@/config/aiProviders').AIModelId);
+    }
+  };
+
+  const handleModelChange = (modelId: string) => {
+    setAiModel(modelId as import('@/config/aiProviders').AIModelId);
+  };
+
   return (
     <div className="flex flex-col bg-background rounded-lg h-full">
       {/* Header */}
-      <div className="p-3 border-b flex justify-end items-center">
+      <div className="p-3 border-b flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <Bot className="h-5 w-5 text-primary" />
+          <span className="font-medium">AI 助手</span>
+        </div>
         <div className="flex items-center gap-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 text-xs">
+                {AI_PROVIDERS.find(p => p.id === aiProvider)?.name || 'AI'}: {
+                  AI_PROVIDERS.find(p => p.id === aiProvider)?.models.find(m => m.id === aiModel)?.name || aiModel
+                }
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <div className="px-2 py-1.5 text-sm font-semibold">AI 模型选择</div>
+              <DropdownMenuSeparator />
+              {AI_PROVIDERS.map(provider => (
+                <div key={provider.id}>
+                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground uppercase">
+                    {provider.name}
+                  </div>
+                  {provider.models.map(model => (
+                    <DropdownMenuItem 
+                      key={model.id}
+                      onClick={() => {
+                        handleProviderChange(provider.id);
+                        handleModelChange(model.id);
+                      }}
+                      className={`${aiProvider === provider.id && aiModel === model.id ? 'bg-accent' : ''}`}
+                    >
+                      <div className="flex flex-col">
+                        <span>{model.name}</span>
+                        <span className="text-xs text-muted-foreground">{model.description}</span>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </div>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button size="icon" variant="ghost" onClick={createNewChat} className="h-8 w-8">
             <Plus className="h-4 w-4" />
           </Button>
@@ -198,6 +303,24 @@ export function AIChatSidebar() {
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="h-3 w-3 animate-spin" />
                     AI正在思考...
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-5 px-1 text-xs"
+                      onClick={handleCancelRequest}
+                    >
+                      取消
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <div className="flex justify-start">
+                <div className="bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-2 text-sm text-destructive">
+                    <span>错误: {error}</span>
                   </div>
                 </div>
               </div>
@@ -231,7 +354,7 @@ export function AIChatSidebar() {
             disabled={!inputMessage.trim() || isTyping || !activeChatSessionId}
             className="self-end h-9 w-9 p-0"
           >
-            <Send className="h-4 w-4" />
+            {isTyping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">

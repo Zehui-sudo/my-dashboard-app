@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { LearningState, LearningActions, LearningPath, SectionContent, ChatMessage, ChatSession, PyodideStatus, ContextReference } from '@/types';
 import { pyodideService } from '@/services/pyodideService';
+import { AIProviderId, AIModelId } from '@/config/aiProviders';
 
 // Mock API functions - replace with real API calls
 const mockLearningApi = {
@@ -124,6 +125,9 @@ export const useLearningStore = create<LearningState & LearningActions>()(
       fontSize: 16,
       selectedContent: null,
       userName: undefined,
+      // AI相关状态
+      aiProvider: 'qwen' as AIProviderId,
+      aiModel: 'qwen-plus' as AIModelId,
 
       // Actions
       loadPath: async (language: 'python' | 'javascript') => {
@@ -313,6 +317,15 @@ export const useLearningStore = create<LearningState & LearningActions>()(
       setUserName: (name: string) => {
         set({ userName: name });
       },
+      
+      // AI Actions
+      setAiProvider: (provider: AIProviderId) => {
+        set({ aiProvider: provider });
+      },
+      
+      setAiModel: (model: AIModelId) => {
+        set({ aiModel: model });
+      },
     }),
     {
       name: 'learning-store',
@@ -323,6 +336,8 @@ export const useLearningStore = create<LearningState & LearningActions>()(
         activeChatSessionId: state.activeChatSessionId,
         fontSize: state.fontSize,
         userName: state.userName,
+        aiProvider: state.aiProvider,
+        aiModel: state.aiModel,
       }),
     }
   )

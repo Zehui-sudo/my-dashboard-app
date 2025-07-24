@@ -75,6 +75,9 @@ export interface LearningState {
   selectedContent: ContextReference | null;
   // User Info
   userName?: string;
+  // AI Provider State
+  aiProvider: import('@/config/aiProviders').AIProviderId;
+  aiModel: import('@/config/aiProviders').AIModelId;
 }
 
 // AI 对话消息
@@ -120,6 +123,9 @@ export interface LearningActions {
   setSelectedContent: (content: ContextReference | null) => void;
   // User Actions
   setUserName: (name: string) => void;
+  // AI Actions
+  setAiProvider: (provider: import('@/config/aiProviders').AIProviderId) => void;
+  setAiModel: (model: import('@/config/aiProviders').AIModelId) => void;
 }
 
 // API 响应类型
