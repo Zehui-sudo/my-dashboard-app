@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ChatMessageRenderer } from './ChatMessageRenderer';
 
 const AI_PROVIDER_LABELS: Record<AIProviderType, string> = {
   openai: 'OpenAI',
@@ -160,7 +161,7 @@ export function AIChatSidebar() {
           <div className="p-3 space-y-3">
             {messages.map((message) => (
               <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className="max-w-[85%] space-y-1">
+                <div className="max-w-[95%] space-y-1">
                   {message.contextReference && message.sender === 'user' && (
                     <div className="mb-2">
                       <ContextReference
@@ -176,7 +177,7 @@ export function AIChatSidebar() {
                         : 'bg-muted'
                     }`}
                   >
-                    <div className="whitespace-pre-wrap">{message.content}</div>
+                    <ChatMessageRenderer content={message.content} />
                   </div>
                   <div className={`text-xs text-muted-foreground px-1 ${
                     message.sender === 'user' ? 'text-right' : ''

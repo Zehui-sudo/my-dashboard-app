@@ -47,43 +47,84 @@ const languagePatterns = {
   },
 };
 
-function highlightCode(code: string, language: string) {
+const escapeHtml = (text: string) => {
+  return text
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"')
+    .replace(/'/g, '&#039;');
+};
+
+const tokenTypeToClassName: Record<string, string> = {
+  keywords: "text-blue-600 dark:text-blue-400 font-semibold",
+  strings: "text-green-600 dark:text-green-400",
+  comments: "text-gray-500 dark:text-gray-400 italic",
+  numbers: "text-purple-600 dark:text-purple-400",
+  functions: "text-yellow-600 dark:text-yellow-400",
+  types: "text-cyan-600 dark:text-cyan-400",
+  tags: "text-blue-600 dark:text-blue-400",
+  attributes: "text-red-600 dark:text-red-400",
+  properties: "text-indigo-600 dark:text-indigo-400",
+  values: "text-teal-600 dark:text-teal-400",
+};
+
+interface Token {
+  type: string;
+  content: string;
+  index: number;
+}
+
+function highlightCode(code: string, language: string): string {
   const patterns = languagePatterns[language as keyof typeof languagePatterns];
-  if (!patterns) return code;
+  if (!patterns) return escapeHtml(code);
 
-  let highlightedCode = code;
-  
-  // Apply highlighting patterns
-  Object.entries(patterns).forEach(([type, pattern]) => {
-    highlightedCode = highlightedCode.replace(pattern, (match) => {
-      switch (type) {
-        case 'keywords':
-          return `<span class="text-blue-600 dark:text-blue-400 font-semibold">${match}</span>`;
-        case 'strings':
-          return `<span class="text-green-600 dark:text-green-400">${match}</span>`;
-        case 'comments':
-          return `<span class="text-gray-500 dark:text-gray-400 italic">${match}</span>`;
-        case 'numbers':
-          return `<span class="text-purple-600 dark:text-purple-400">${match}</span>`;
-        case 'functions':
-          return `<span class="text-yellow-600 dark:text-yellow-400">${match}</span>`;
-        case 'types':
-          return `<span class="text-cyan-600 dark:text-cyan-400">${match}</span>`;
-        case 'tags':
-          return `<span class="text-blue-600 dark:text-blue-400">${match}</span>`;
-        case 'attributes':
-          return `<span class="text-red-600 dark:text-red-400">${match}</span>`;
-        case 'properties':
-          return `<span class="text-indigo-600 dark:text-indigo-400">${match}</span>`;
-        case 'values':
-          return `<span class="text-teal-600 dark:text-teal-400">${match}</span>`;
-        default:
-          return match;
-      }
-    });
-  });
+  let tokens: Token[] = [];
 
-  return highlightedCode;
+  // 1. Find all matches and create tokens
+  for (const [type, pattern] of Object.entries(patterns)) {
+    for (const match of code.matchAll(pattern)) {
+      tokens.push({
+        type,
+        content: match[0],
+        index: match.index!,
+      });
+    }
+  }
+
+  // 2. Sort tokens by their starting index
+  tokens.sort((a, b) => a.index - b.index);
+
+  // 3. Filter out overlapping tokens, keeping the longest one
+  const filteredTokens: Token[] = [];
+  let lastIndex = -1;
+  for (const token of tokens) {
+    if (token.index >= lastIndex) {
+      filteredTokens.push(token);
+      lastIndex = token.index + token.content.length;
+    }
+  }
+
+  // 4. Build the final HTML string
+  let result = '';
+  let currentIndex = 0;
+  for (const token of filteredTokens) {
+    // Add the plain text before the token
+    if (token.index > currentIndex) {
+      result += escapeHtml(code.substring(currentIndex, token.index));
+    }
+    // Add the highlighted token
+    const className = tokenTypeToClassName[token.type] || '';
+    result += `<span class="${className}">${escapeHtml(token.content)}</span>`;
+    currentIndex = token.index + token.content.length;
+  }
+
+  // Add any remaining plain text
+  if (currentIndex < code.length) {
+    result += escapeHtml(code.substring(currentIndex));
+  }
+
+  return result;
 }
 
 export function SyntaxHighlighter({ code, language = 'text', className }: SyntaxHighlighterProps) {
