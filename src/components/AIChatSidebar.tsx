@@ -105,7 +105,7 @@ export function AIChatSidebar() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-background rounded-lg">
+    <div className="flex flex-col bg-background rounded-lg h-full">
       {/* Header */}
       <div className="p-3 border-b flex justify-end items-center">
         <div className="flex items-center gap-1">
@@ -157,52 +157,54 @@ export function AIChatSidebar() {
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1" ref={scrollAreaRef}>
-        <div className="p-3 space-y-3">
-          {messages.map((message) => (
-            <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className="max-w-[85%] space-y-1">
-                {message.contextReference && message.sender === 'user' && (
-                  <div className="mb-2">
-                    <ContextReference 
-                      reference={message.contextReference} 
-                      onClear={() => {}} 
-                    />
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full" ref={scrollAreaRef}>
+          <div className="p-3 space-y-3">
+            {messages.map((message) => (
+              <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className="max-w-[85%] space-y-1">
+                  {message.contextReference && message.sender === 'user' && (
+                    <div className="mb-2">
+                      <ContextReference 
+                        reference={message.contextReference} 
+                        onClear={() => {}} 
+                      />
+                    </div>
+                  )}
+                  <div
+                    className={`rounded-lg px-3 py-2 text-sm ${
+                      message.sender === 'user'
+                        ? 'bg-primary text-primary-foreground ml-auto'
+                        : 'bg-muted'
+                    }`}
+                  >
+                    <div className="whitespace-pre-wrap">{message.content}</div>
                   </div>
-                )}
-                <div
-                  className={`rounded-lg px-3 py-2 text-sm ${
-                    message.sender === 'user'
-                      ? 'bg-primary text-primary-foreground ml-auto'
-                      : 'bg-muted'
-                  }`}
-                >
-                  <div className="whitespace-pre-wrap">{message.content}</div>
-                </div>
-                <div className={`text-xs text-muted-foreground px-1 ${
-                  message.sender === 'user' ? 'text-right' : ''
-                }`}>
-                  {new Date(message.timestamp).toLocaleTimeString([], { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                  })}
+                  <div className={`text-xs text-muted-foreground px-1 ${
+                    message.sender === 'user' ? 'text-right' : ''
+                  }`}>
+                    {new Date(message.timestamp).toLocaleTimeString([], { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
 
-          {isTyping && (
-            <div className="flex justify-start">
-              <div className="bg-muted rounded-lg px-3 py-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  AI正在思考...
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="bg-muted rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    AI正在思考...
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      </ScrollArea>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
 
       {/* Input Area */}
       <div className="p-3 border-t space-y-2">
