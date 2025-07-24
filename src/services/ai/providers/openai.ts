@@ -22,7 +22,15 @@ export class OpenAIProvider extends AIProvider {
   }
 
   private formatMessages(messages: ChatMessage[]) {
-    return messages.map(msg => ({
+    let processedMessages = [...messages];
+
+    // If the first message is from the AI and there are subsequent messages, remove it.
+    // Most chat APIs require the conversation to start with a user message.
+    if (processedMessages.length > 1 && processedMessages[0].sender === 'ai') {
+      processedMessages.shift(); // Removes the initial AI greeting
+    }
+
+    return processedMessages.map(msg => ({
       role: msg.sender === 'user' ? 'user' : 'assistant',
       content: msg.content,
     }));

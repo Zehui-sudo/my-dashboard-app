@@ -26,17 +26,14 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Chat API error:', error);
-    
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
-    }
-    
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    console.error('Chat API error:', errorMessage, error);
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        error: 'Failed to get response from AI provider.',
+        details: errorMessage,
+      },
       { status: 500 }
     );
   }

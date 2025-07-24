@@ -340,10 +340,11 @@ export const useLearningStore = create<LearningState & LearningActions>()(
 
         try {
           // Get current chat messages
-          const activeSession = state.chatSessions.find(s => s.id === activeSessionId);
+          // Get the freshest session state right before the API call
+          const activeSession = get().chatSessions.find(s => s.id === activeSessionId);
           if (!activeSession) throw new Error('No active session');
 
-          // Call API
+          // Call API with the up-to-date messages from the store
           const response = await fetch('/api/chat', {
             method: 'POST',
             headers: {
@@ -369,9 +370,23 @@ export const useLearningStore = create<LearningState & LearningActions>()(
           });
         } catch (error) {
           console.error('Chat error:', error);
+          let errorMessage = '抱歉，发送消息时出现错误。请稍后重试。';
+          if (error instanceof Error) {
+            // Attempt to parse the response body if it's a fetch error
+            try {
+              // This is a bit of a hack, but we're assuming the error might be from our API route
+              // and we can get more details from the response.
+              const responseBody = JSON.parse(error.message.substring(error.message.indexOf('{')));
+              if (responseBody.details) {
+                errorMessage = `错误: ${responseBody.details}`;
+              }
+            } catch (e) {
+              // Could not parse, use the default error message
+            }
+          }
           // Add error message
           get().addMessageToActiveChat({
-            content: '抱歉，发送消息时出现错误。请稍后重试。',
+            content: errorMessage,
             sender: 'ai',
           });
         } finally {
