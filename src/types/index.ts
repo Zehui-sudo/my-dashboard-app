@@ -66,6 +66,9 @@ export interface LearningState {
   // AI Chat State
   chatSessions: ChatSession[];
   activeChatSessionId: string | null;
+  // AI Provider State
+  aiProvider: AIProviderType;
+  sendingMessage: boolean;
   // Pyodide State
   pyodideStatus: PyodideStatus;
   pyodideError: string | null;
@@ -112,6 +115,9 @@ export interface LearningActions {
   deleteChat: (sessionId: string) => void;
   renameChat: (sessionId: string, newTitle: string) => void;
   addMessageToActiveChat: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
+  // AI Provider Actions
+  setAIProvider: (provider: AIProviderType) => void;
+  sendChatMessage: (content: string) => Promise<void>;
   // Pyodide Actions
   loadPyodide: () => Promise<void>;
   // Font Size Actions
@@ -126,4 +132,27 @@ export interface LearningActions {
 export interface LearningApi {
   getLearningPath: (language: 'python' | 'javascript') => Promise<LearningPath>;
   getSectionContent: (sectionId: string) => Promise<SectionContent>;
+}
+
+// AI Provider Types
+export type AIProviderType = 'openai' | 'anthropic' | 'deepseek' | 'doubao';
+
+// AI Chat API Types
+export interface ChatAPIRequest {
+  messages: ChatMessage[];
+  provider: AIProviderType;
+  model?: string;
+  contextReference?: ContextReference;
+}
+
+export interface ChatAPIResponse {
+  content: string;
+  provider: AIProviderType;
+  model: string;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+  error?: string;
 }

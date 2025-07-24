@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { LearningState, LearningActions, LearningPath, SectionContent, ChatMessage, ChatSession, PyodideStatus, ContextReference } from '@/types';
+import type { LearningState, LearningActions, LearningPath, SectionContent, ChatMessage, ChatSession, PyodideStatus, ContextReference, AIProviderType } from '@/types';
 import { pyodideService } from '@/services/pyodideService';
 
 // Mock API functions - replace with real API calls
@@ -119,6 +119,8 @@ export const useLearningStore = create<LearningState & LearningActions>()(
       },
       chatSessions: [],
       activeChatSessionId: null,
+      aiProvider: 'openai' as AIProviderType,
+      sendingMessage: false,
       pyodideStatus: 'unloaded' as PyodideStatus,
       pyodideError: null,
       fontSize: 16,
@@ -313,6 +315,69 @@ export const useLearningStore = create<LearningState & LearningActions>()(
       setUserName: (name: string) => {
         set({ userName: name });
       },
+
+      // AI Provider Actions
+      setAIProvider: (provider: AIProviderType) => {
+        set({ aiProvider: provider });
+      },
+
+      sendChatMessage: async (content: string) => {
+        const state = get();
+        const activeSessionId = state.activeChatSessionId;
+        
+        if (!activeSessionId || state.sendingMessage) {
+          return;
+        }
+
+        // Add user message
+        get().addMessageToActiveChat({
+          content,
+          sender: 'user',
+          contextReference: state.selectedContent || undefined,
+        });
+
+        set({ sendingMessage: true });
+
+        try {
+          // Get current chat messages
+          const activeSession = state.chatSessions.find(s => s.id === activeSessionId);
+          if (!activeSession) throw new Error('No active session');
+
+          // Call API
+          const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              messages: activeSession.messages,
+              provider: state.aiProvider,
+              contextReference: state.selectedContent,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          // Add AI response
+          get().addMessageToActiveChat({
+            content: data.content,
+            sender: 'ai',
+          });
+        } catch (error) {
+          console.error('Chat error:', error);
+          // Add error message
+          get().addMessageToActiveChat({
+            content: '抱歉，发送消息时出现错误。请稍后重试。',
+            sender: 'ai',
+          });
+        } finally {
+          set({ sendingMessage: false });
+        }
+      },
     }),
     {
       name: 'learning-store',
@@ -323,6 +388,7 @@ export const useLearningStore = create<LearningState & LearningActions>()(
         activeChatSessionId: state.activeChatSessionId,
         fontSize: state.fontSize,
         userName: state.userName,
+        aiProvider: state.aiProvider,
       }),
     }
   )
@@ -337,4 +403,5 @@ useLearningStore.setState({
   pyodideStatus: 'unloaded',
   pyodideError: null,
   selectedContent: null,
+  sendingMessage: false,
 });
