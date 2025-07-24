@@ -9,6 +9,7 @@ export interface ChatRequest {
   maxTokens?: number;
   contextReference?: ContextReference;
   stream?: boolean;
+  language?: 'python' | 'javascript';
 }
 
 export interface ChatResponse {

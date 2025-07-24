@@ -6,7 +6,7 @@ export const runtime = 'edge';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { messages, provider = 'openai', model, contextReference } = body;
+    const { messages, provider = 'openai', model, contextReference, language } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: 'Messages array is required' }), {
@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
       model,
       contextReference,
       stream: true,
+      language,
     });
 
     if (!(stream instanceof ReadableStream)) {

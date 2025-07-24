@@ -337,7 +337,7 @@ export const useLearningStore = create<LearningState & LearningActions>()(
         set({ aiProvider: provider });
       },
 
-      sendChatMessage: async (content: string) => {
+      sendChatMessage: async (content: string, contextReference?: ContextReference | null, language?: 'python' | 'javascript') => {
         const state = get();
         const activeSessionId = state.activeChatSessionId;
         
@@ -349,7 +349,7 @@ export const useLearningStore = create<LearningState & LearningActions>()(
         get().addMessageToActiveChat({
           content,
           sender: 'user',
-          contextReference: state.selectedContent || undefined,
+          contextReference: contextReference || undefined,
         });
 
         // Add a placeholder for AI response
@@ -372,7 +372,8 @@ export const useLearningStore = create<LearningState & LearningActions>()(
             body: JSON.stringify({
               messages: activeSession.messages.filter(m => m.id !== aiMessageId), // Exclude placeholder
               provider: state.aiProvider,
-              contextReference: state.selectedContent,
+              contextReference: contextReference,
+              language: state.currentPath?.language,
             }),
           });
 

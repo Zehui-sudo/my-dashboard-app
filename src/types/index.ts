@@ -118,7 +118,7 @@ export interface LearningActions {
   updateMessageContent: (sessionId: string, messageId: string, content: string) => void;
   // AI Provider Actions
   setAIProvider: (provider: AIProviderType) => void;
-  sendChatMessage: (content: string) => Promise<void>;
+  sendChatMessage: (content: string, contextReference?: ContextReference | null, language?: 'python' | 'javascript') => Promise<void>;
   // Pyodide Actions
   loadPyodide: () => Promise<void>;
   // Font Size Actions
@@ -144,6 +144,7 @@ export interface ChatAPIRequest {
   provider: AIProviderType;
   model?: string;
   contextReference?: ContextReference;
+  language?: 'python' | 'javascript';
 }
 
 export interface ChatAPIResponse {

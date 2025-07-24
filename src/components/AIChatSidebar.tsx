@@ -86,11 +86,13 @@ export function AIChatSidebar() {
     if (!inputMessage.trim() || !activeChatSessionId || sendingMessage) return;
 
     const message = inputMessage;
+    const context = selectedContent;
+    
     setInputMessage('');
     setSelectedContent(null);
 
     // Call the store's sendChatMessage which handles API call
-    await sendChatMessage(message);
+    await sendChatMessage(message, context, useLearningStore.getState().currentPath?.language);
   };
 
 

@@ -41,14 +41,17 @@ export class OpenAIProvider extends AIProvider {
       throw new Error('OpenAI API key not configured');
     }
 
-    const { messages, model = this.model, temperature = 0.7, maxTokens = 2000, contextReference, stream = false } = request;
+    const { messages, model = this.model, temperature = 0.7, maxTokens = 2000, contextReference, stream = false, language } = request;
 
     // Add context if provided
     let formattedMessages = this.formatMessages(messages);
     if (contextReference) {
+      const sourceText = contextReference.source ? `的[${contextReference.source}]这一章节` : '';
+      const languageText = language ? `的[${language}]` : '';
+      
       const contextMessage = {
         role: 'system',
-        content: `Context from ${contextReference.source}: ${contextReference.text}`
+        content: `你是一个AI学习助手。用户现在正在学习${languageText}${sourceText}的知识点，并勾画了内容：“${contextReference.text}”。请你根据用户勾画的内容和具体提问来解答用户的问题，回答需要自然、友好、易于理解。`
       };
       formattedMessages = [contextMessage, ...formattedMessages];
     }
