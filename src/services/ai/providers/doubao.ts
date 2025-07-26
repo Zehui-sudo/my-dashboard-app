@@ -28,6 +28,35 @@ export class DoubaoProvider extends AIProvider {
     }));
   }
 
+  private _createParserStream(stream: ReadableStream): ReadableStream {
+    const decoder = new TextDecoder();
+    const transformStream = new TransformStream({
+      async transform(chunk, controller) {
+        const text = decoder.decode(chunk, { stream: true });
+        const lines = text.split('\n').filter(line => line.trim().startsWith('data:'));
+        
+        for (const line of lines) {
+          const jsonStr = line.replace(/^data: /, '');
+          if (jsonStr === '[DONE]') {
+            controller.terminate();
+            return;
+          }
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const delta = parsed.choices[0]?.delta?.content;
+            if (delta) {
+              controller.enqueue(new TextEncoder().encode(delta));
+            }
+          } catch (e) {
+            console.error('Failed to parse Doubao stream chunk:', jsonStr);
+          }
+        }
+      }
+    });
+
+    return stream.pipeThrough(transformStream);
+  }
+
   async chat(request: ChatRequest): Promise<ChatResponse | ReadableStream> {
     if (!this.isConfigured()) {
       throw new Error('Doubao API key not configured');
@@ -70,7 +99,7 @@ export class DoubaoProvider extends AIProvider {
         if (!response.body) {
           throw new Error('Response body is null for streaming request');
         }
-        return response.body;
+        return this._createParserStream(response.body);
       }
 
       const data = await response.json();

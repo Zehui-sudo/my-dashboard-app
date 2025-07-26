@@ -1,81 +1,141 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { LearningState, LearningActions, LearningPath, SectionContent, ChatMessage, ChatSession, PyodideStatus, ContextReference, AIProviderType } from '@/types';
+import type { LearningState, LearningActions, LearningPath, SectionContent, ChatMessage, ChatSession, PyodideStatus, ContextReference, AIProviderType, Chapter } from '@/types';
 import { pyodideService } from '@/services/pyodideService';
 
 // Mock API functions - replace with real API calls
 const mockLearningApi = {
   getLearningPath: async (language: 'python' | 'javascript'): Promise<LearningPath> => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return {
-      id: `${language}-basics`,
-      title: `${language === 'python' ? 'Python' : 'JavaScript'} 核心基础`,
-      language,
-      chapters: [
-        {
-          id: `${language}-ch-1-basics`,
-          title: '基础语法',
-          sections: [
-            {
-              id: `${language}-sec-1-1-variables`,
-              title: '变量与数据类型',
-              chapterId: `${language}-ch-1-basics`
-            },
-            {
-              id: `${language}-sec-1-2-operators`,
-              title: '运算符',
-              chapterId: `${language}-ch-1-basics`
-            }
-          ]
-        },
-        {
-          id: `${language}-ch-2-control`,
-          title: '控制流程',
-          sections: [
-            {
-              id: `${language}-sec-2-1-conditionals`,
-              title: '条件语句',
-              chapterId: `${language}-ch-2-control`
-            },
-            {
-              id: `${language}-sec-2-2-loops`,
-              title: '循环语句',
-              chapterId: `${language}-ch-2-control`
-            }
-          ]
+    await new Promise(resolve => setTimeout(resolve, 100)); // Simulate API delay
+
+    if (language === 'python') {
+      // Keep mock data for Python for now
+      return {
+        id: `python-basics`,
+        title: `Python 核心基础`,
+        language,
+        chapters: [
+          {
+            id: `python-ch-1-basics`,
+            title: '基础语法',
+            sections: [
+              { id: `python-sec-1-1-variables`, title: '变量与数据类型', chapterId: `python-ch-1-basics` },
+            ]
+          },
+          {
+            id: `python-ch-2-control`,
+            title: '控制流程',
+            sections: [
+              { id: `python-sec-2-1-conditionals`, title: '条件语句', chapterId: `python-ch-2-control` },
+            ]
+          }
+        ]
+      };
+    }
+
+    // Fetch and parse JavaScript learning path from markdown
+    const response = await fetch('/javascript-learning-path.md');
+    if (!response.ok) {
+      throw new Error('Failed to fetch javascript-learning-path.md');
+    }
+    const markdown = await response.text();
+    
+    const lines = markdown.split('\n');
+    const path: LearningPath = { id: '', title: '', language, chapters: [] };
+    let currentChapter: Chapter | null = null;
+    const idRegex = /\(id: (.*?)\)/;
+
+    const pathLine = lines.find(line => line.startsWith('# '));
+    if (pathLine) {
+      path.title = pathLine.replace('# ', '').replace(idRegex, '').trim();
+      const pathIdMatch = pathLine.match(idRegex);
+      if (pathIdMatch) path.id = pathIdMatch[1];
+    }
+
+    for (const line of lines) {
+      if (line.startsWith('## ')) {
+        const title = line.replace('## ', '').replace(idRegex, '').trim();
+        const idMatch = line.match(idRegex);
+        if (idMatch) {
+          currentChapter = { id: idMatch[1], title, sections: [] };
+          path.chapters.push(currentChapter);
         }
-      ]
-    };
+      } else if (line.startsWith('### ') && currentChapter) {
+        const title = line.replace('### ', '').replace(idRegex, '').trim();
+        const idMatch = line.match(idRegex);
+        if (idMatch) {
+          currentChapter.sections.push({
+            id: idMatch[1],
+            title,
+            chapterId: currentChapter.id,
+          });
+        }
+      }
+    }
+    return path;
   },
 
   getSectionContent: async (sectionId: string): Promise<SectionContent> => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
       const response = await fetch(`/content/${sectionId}.md`);
-      
       if (!response.ok) {
-        // If the file is not found, throw an error to be caught below
         throw new Error(`Markdown file not found for section: ${sectionId}`);
       }
-      
-      const markdownContent = await response.text();
+      const markdown = await response.text();
 
-      return {
-        id: sectionId,
-        contentBlocks: [
-          {
-            type: 'markdown',
-            content: markdownContent,
-          },
-        ],
-      };
+      const contentBlocks: (import('@/types').MarkdownBlock | import('@/types').InteractiveCodeBlock)[] = [];
+      
+      // Regex to split by interactive code blocks, keeping the delimiter in a capturing group
+      const parts = markdown.split(/(\`\`\`(?:javascript|python|html):interactive[\s\S]*?\`\`\`)/g);
+
+      for (const part of parts) {
+        if (!part || part.trim() === '') continue;
+
+        const interactiveMatch = part.match(/\`\`\`(javascript|python|html):interactive\n([\s\S]*?)\`\`\`/);
+
+        if (interactiveMatch) {
+          const codeLanguage = interactiveMatch[1];
+          // Treat html as a static markdown block for display, not interactive execution
+          if (codeLanguage === 'html') {
+             const lastBlock = contentBlocks[contentBlocks.length - 1];
+             if (lastBlock && lastBlock.type === 'markdown') {
+                lastBlock.content += `\n\n\`\`\`html\n${interactiveMatch[2].trim()}\n\`\`\``;
+            } else {
+                contentBlocks.push({
+                    type: 'markdown',
+                    content: `\`\`\`html\n${interactiveMatch[2].trim()}\n\`\`\``,
+                });
+            }
+          } else {
+            contentBlocks.push({
+                type: 'code',
+                language: codeLanguage as 'javascript' | 'python',
+                code: interactiveMatch[2].trim(),
+                isInteractive: true,
+            });
+          }
+        } else {
+          // It's a markdown block
+          const lastBlock = contentBlocks[contentBlocks.length - 1];
+          if (lastBlock && lastBlock.type === 'markdown') {
+            lastBlock.content += part;
+          } else {
+            contentBlocks.push({
+              type: 'markdown',
+              content: part,
+            });
+          }
+        }
+      }
+
+      return { id: sectionId, contentBlocks };
+
     } catch (error) {
       console.warn(error);
       
-      // Fallback content when fetch fails or file doesn't exist
+      // Fallback content
       return {
         id: sectionId,
         contentBlocks: [
@@ -389,27 +449,9 @@ export const useLearningStore = create<LearningState & LearningActions>()(
             const { done, value } = await reader.read();
             if (done) break;
             
-            const chunk = decoder.decode(value, { stream: true });
-            
-            // OpenAI streaming sends data chunks that look like: data: {"id":"...","choices":[{"delta":{"content":"..."}}]}
-            const lines = chunk.split('\n').filter(line => line.trim().startsWith('data:'));
-            
-            for (const line of lines) {
-              const jsonStr = line.replace(/^data: /, '');
-              if (jsonStr === '[DONE]') {
-                break;
-              }
-              try {
-                const parsed = JSON.parse(jsonStr);
-                const delta = parsed.choices[0]?.delta?.content || '';
-                if (delta) {
-                  accumulatedContent += delta;
-                  get().updateMessageContent(activeSessionId, aiMessageId, accumulatedContent + '▍');
-                }
-              } catch (e) {
-                console.error('Failed to parse stream chunk:', jsonStr);
-              }
-            }
+            const delta = decoder.decode(value);
+            accumulatedContent += delta;
+            get().updateMessageContent(activeSessionId, aiMessageId, accumulatedContent + '▍');
           }
           // Remove the typing cursor at the end
           get().updateMessageContent(activeSessionId, aiMessageId, accumulatedContent);

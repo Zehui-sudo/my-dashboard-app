@@ -35,6 +35,39 @@ export class AnthropicProvider extends AIProvider {
     return formatted;
   }
 
+  private _createParserStream(stream: ReadableStream): ReadableStream {
+    const decoder = new TextDecoder();
+    const transformStream = new TransformStream({
+      async transform(chunk, controller) {
+        const text = decoder.decode(chunk, { stream: true });
+        // Anthropic sends events that can be parsed line by line
+        const lines = text.split('\n').filter(line => line.trim().length > 0);
+
+        for (const line of lines) {
+          if (line.startsWith('data:')) {
+            const jsonStr = line.replace(/^data: /, '');
+            try {
+              const parsed = JSON.parse(jsonStr);
+              if (parsed.type === 'content_block_delta') {
+                const delta = parsed.delta?.text;
+                if (delta) {
+                  controller.enqueue(new TextEncoder().encode(delta));
+                }
+              } else if (parsed.type === 'message_stop') {
+                controller.terminate();
+                return;
+              }
+            } catch (e) {
+              console.error('Failed to parse Anthropic stream chunk:', jsonStr);
+            }
+          }
+        }
+      }
+    });
+    
+    return stream.pipeThrough(transformStream);
+  }
+
   async chat(request: ChatRequest): Promise<ChatResponse | ReadableStream> {
     if (!this.isConfigured()) {
       throw new Error('Anthropic API key not configured');
@@ -77,7 +110,7 @@ export class AnthropicProvider extends AIProvider {
         if (!response.body) {
           throw new Error('Response body is null for streaming request');
         }
-        return response.body;
+        return this._createParserStream(response.body);
       }
 
       const data = await response.json();
