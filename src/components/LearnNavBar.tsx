@@ -31,7 +31,7 @@ import {
 import { Home, ChevronLeft, ChevronRight, BookOpen, Type } from "lucide-react";
 
 export function LearnNavBar() {
-  const { currentPath, currentSection, loadPath, loadSection, fontSize, setFontSize } = useLearningStore();
+  const { currentPath, currentSection, loadPath, loadSection, fontSize, setFontSize, userProgress } = useLearningStore();
 
   const {
     allSections,
@@ -39,6 +39,7 @@ export function LearnNavBar() {
     currentChapterTitle,
     progressValue,
     language,
+    completedCount,
   } = useMemo(() => {
     if (!currentPath || !currentSection) {
       return {
@@ -47,7 +48,8 @@ export function LearnNavBar() {
         currentChapterTitle: "",
         progressValue: 0,
         language: '',
-        sectionId: ''
+        sectionId: '',
+        completedCount: 0
       };
     }
 
@@ -56,7 +58,15 @@ export function LearnNavBar() {
     const chapter = currentPath.chapters.find((ch) => 
       ch.sections.some(section => section.id === currentSection.id)
     );
-    const progress = sections.length > 0 ? ((currentIndex + 1) / sections.length) * 100 : 0;
+    
+    // 只计算当前语言路径下的章节完成情况
+    const currentPathSectionIds = sections.map(s => s.id);
+    const completed = Object.entries(userProgress)
+      .filter(([sectionId, progress]) => 
+        currentPathSectionIds.includes(sectionId) && progress.isCompleted
+      ).length;
+    
+    const progress = sections.length > 0 ? (completed / sections.length) * 100 : 0;
 
     return {
       allSections: sections,
@@ -64,9 +74,10 @@ export function LearnNavBar() {
       currentChapterTitle: chapter?.title || "",
       progressValue: progress,
       language: currentPath.language,
-      sectionId: currentSection.id
+      sectionId: currentSection.id,
+      completedCount: completed
     };
-  }, [currentPath, currentSection]);
+  }, [currentPath, currentSection, userProgress]);
 
   const handleLanguageChange = (newLang: "python" | "javascript") => {
     if (newLang !== language) {
@@ -158,10 +169,10 @@ export function LearnNavBar() {
 
         {/* Right Section */}
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 w-32">
+          <div className="flex items-center gap-2 w-40">
             <Progress value={progressValue} className="w-full" />
-            <span className="text-xs text-muted-foreground">
-              {currentSectionIndex + 1}/{allSections.length}
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              已完成 {completedCount}/{allSections.length}
             </span>
           </div>
           <DropdownMenu>

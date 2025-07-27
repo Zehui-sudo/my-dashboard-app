@@ -5,16 +5,21 @@ import { useLearningStore } from '@/store/learningStore';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, BookOpen } from 'lucide-react';
+import { AlertTriangle, BookOpen, CheckCircle2, Star } from 'lucide-react';
 import { EnhancedMarkdownRenderer } from './EnhancedMarkdownRenderer';
 import { InteractiveCodeBlock } from './InteractiveCodeBlock';
 import { useTextSelection } from '@/hooks/useTextSelection';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 export function ContentDisplay() {
   const currentSection = useLearningStore((state) => state.currentSection);
   const loading = useLearningStore((state) => state.loading);
   const error = useLearningStore((state) => state.error);
   const fontSize = useLearningStore((state) => state.fontSize);
+  const userProgress = useLearningStore((state) => state.userProgress);
+  const toggleSectionComplete = useLearningStore((state) => state.toggleSectionComplete);
+  const toggleSectionFavorite = useLearningStore((state) => state.toggleSectionFavorite);
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -77,6 +82,10 @@ export function ContentDisplay() {
     );
   }
 
+  const progress = currentSection ? userProgress[currentSection.id] : undefined;
+  const isCompleted = progress?.isCompleted || false;
+  const isFavorite = progress?.isFavorite || false;
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -117,6 +126,47 @@ export function ContentDisplay() {
               <p className="text-sm text-muted-foreground">
                 这个章节的内容正在精心准备中，敬请期待��
               </p>
+            </div>
+          )}
+          
+          {/* Progress Actions */}
+          {currentSection.contentBlocks.length > 0 && (
+            <div className="mt-12 space-y-4">
+              <Separator />
+              <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    variant={isCompleted ? "default" : "outline"}
+                    size="lg"
+                    onClick={() => toggleSectionComplete(currentSection.id)}
+                    className="w-full sm:w-auto"
+                  >
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    {isCompleted ? '已完成学习' : '标记为已完成'}
+                  </Button>
+                  
+                  <Button
+                    variant={isFavorite ? "default" : "outline"}
+                    size="lg"
+                    onClick={() => toggleSectionFavorite(currentSection.id)}
+                    className={`w-full sm:w-auto ${isFavorite ? 'bg-yellow-500 hover:bg-yellow-600' : ''}`}
+                  >
+                    <Star className={`mr-2 h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
+                    {isFavorite ? '已收藏' : '添加到收藏'}
+                  </Button>
+                </div>
+                
+                {(isCompleted || isFavorite) && (
+                  <div className="text-sm text-muted-foreground">
+                    {isCompleted && progress?.completedAt && (
+                      <p>完成时间: {new Date(progress.completedAt).toLocaleDateString('zh-CN')}</p>
+                    )}
+                    {isFavorite && progress?.favoritedAt && (
+                      <p>收藏时间: {new Date(progress.favoritedAt).toLocaleDateString('zh-CN')}</p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { Search, ChevronRight, CheckCircle2, Circle, ChevronDown } from 'lucide-react';
+import { Search, ChevronRight, CheckCircle2, Circle, ChevronDown, Star } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,9 +22,9 @@ export function NavigationSidebar() {
   const uiState = useLearningStore((state) => state.uiState);
   const updateUserCode = useLearningStore((state) => state.updateUserCode);
   const updateUIState = useLearningStore((state) => state.updateUIState);
+  const userProgress = useLearningStore((state) => state.userProgress);
   const { expandedChapters, searchQuery } = uiState;
   const currentSectionId = currentSection?.id || '';
-
 
   const filteredChapters = currentPath?.chapters.map(chapter => ({
     ...chapter,
@@ -44,15 +44,6 @@ export function NavigationSidebar() {
     loadPath(language);
   };
 
-  const isSectionCompleted = (_sectionId: string) => {
-    let hash = 0;
-    for (let i = 0; i < _sectionId.length; i++) {
-      const char = _sectionId.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
-    }
-    return Math.abs(hash) % 10 > 7;
-  };
 
   return (
     <div className="h-full flex flex-col">
@@ -116,26 +107,35 @@ export function NavigationSidebar() {
                   </AccordionTrigger>
                   <AccordionContent className="pb-4">
                     <div className="space-y-1">
-                      {chapter.sections.map((section, sectionIndex) => (
-                        <Button
-                          key={section.id}
-                          variant={currentSectionId === section.id ? "secondary" : "ghost"}
-                          className="w-full justify-start text-left px-3 py-2 h-auto font-normal"
-                          onClick={() => handleSectionClick(section)}
-                        >
-                          <div className="flex items-center gap-2 w-full">
-                            {isSectionCompleted(section.id) ? (
-                              <CheckCircle2 className="h-3 w-3 text-green-500" />
-                            ) : (
-                              <Circle className="h-3 w-3 text-muted-foreground" />
-                            )}
-                            <span className="text-sm">
-                              {String(sectionIndex + 1).padStart(2, '0')} {section.title}
-                            </span>
-                            <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground" />
-                          </div>
-                        </Button>
-                      ))}
+                      {chapter.sections.map((section, sectionIndex) => {
+                        const progress = userProgress[section.id];
+                        const isCompleted = progress?.isCompleted || false;
+                        const isFavorite = progress?.isFavorite || false;
+                        
+                        return (
+                          <Button
+                            key={section.id}
+                            variant={currentSectionId === section.id ? "secondary" : "ghost"}
+                            className="w-full justify-start text-left px-3 py-2 h-auto font-normal"
+                            onClick={() => handleSectionClick(section)}
+                          >
+                            <div className="flex items-center gap-2 w-full">
+                              {isCompleted ? (
+                                <CheckCircle2 className="h-3 w-3 text-green-500 flex-shrink-0" />
+                              ) : (
+                                <Circle className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                              )}
+                              <span className="text-sm flex-1 min-w-0 truncate">
+                                {String(sectionIndex + 1).padStart(2, '0')} {section.title}
+                              </span>
+                              {isFavorite && (
+                                <Star className="h-3 w-3 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                              )}
+                              <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                            </div>
+                          </Button>
+                        );
+                      })}
                     </div>
                   </AccordionContent>
                 </AccordionItem>

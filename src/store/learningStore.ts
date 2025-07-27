@@ -186,6 +186,7 @@ export const useLearningStore = create<LearningState & LearningActions>()(
       fontSize: 16,
       selectedContent: null,
       userName: undefined,
+      userProgress: {},
 
       // Actions
       loadPath: async (language: 'python' | 'javascript') => {
@@ -397,6 +398,67 @@ export const useLearningStore = create<LearningState & LearningActions>()(
         set({ aiProvider: provider });
       },
 
+      // User Progress Actions
+      toggleSectionComplete: (sectionId: string) => {
+        set(state => {
+          const progress = state.userProgress[sectionId] || {
+            sectionId,
+            isCompleted: false,
+            isFavorite: false,
+          };
+          
+          const updatedProgress = {
+            ...progress,
+            isCompleted: !progress.isCompleted,
+            completedAt: !progress.isCompleted ? Date.now() : undefined,
+          };
+          
+          return {
+            userProgress: {
+              ...state.userProgress,
+              [sectionId]: updatedProgress,
+            },
+          };
+        });
+      },
+      
+      toggleSectionFavorite: (sectionId: string) => {
+        set(state => {
+          const progress = state.userProgress[sectionId] || {
+            sectionId,
+            isCompleted: false,
+            isFavorite: false,
+          };
+          
+          const updatedProgress = {
+            ...progress,
+            isFavorite: !progress.isFavorite,
+            favoritedAt: !progress.isFavorite ? Date.now() : undefined,
+          };
+          
+          return {
+            userProgress: {
+              ...state.userProgress,
+              [sectionId]: updatedProgress,
+            },
+          };
+        });
+      },
+      
+      getSectionProgress: (sectionId: string) => {
+        return get().userProgress[sectionId];
+      },
+      
+      getCompletedCount: () => {
+        const progress = get().userProgress;
+        return Object.values(progress).filter(p => p.isCompleted).length;
+      },
+      
+      getFavoriteCount: () => {
+        const progress = get().userProgress;
+        return Object.values(progress).filter(p => p.isFavorite).length;
+      },
+
       sendChatMessage: async (content: string, contextReference?: ContextReference | null, language?: 'python' | 'javascript') => {
         const state = get();
         const activeSessionId = state.activeChatSessionId;
@@ -475,6 +537,7 @@ export const useLearningStore = create<LearningState & LearningActions>()(
         fontSize: state.fontSize,
         userName: state.userName,
         aiProvider: state.aiProvider,
+        userProgress: state.userProgress,
       }),
     }
   )

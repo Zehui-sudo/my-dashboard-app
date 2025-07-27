@@ -40,6 +40,15 @@ export interface InteractiveCodeBlock {
   isInteractive: true;
 }
 
+// 用户进度数据
+export interface UserProgress {
+  sectionId: string;
+  isCompleted: boolean;
+  isFavorite: boolean;
+  completedAt?: number;
+  favoritedAt?: number;
+}
+
 // UI状态类型
 export interface UIState {
   expandedChapters: string[];
@@ -63,6 +72,7 @@ export interface LearningState {
   };
   userCodeSnippets: Record<string, string>; // Key: SectionID, Value: User's code
   uiState: UIState;
+  userProgress: Record<string, UserProgress>; // Key: sectionId
   // AI Chat State
   chatSessions: ChatSession[];
   activeChatSessionId: string | null;
@@ -127,6 +137,12 @@ export interface LearningActions {
   setSelectedContent: (content: ContextReference | null) => void;
   // User Actions
   setUserName: (name: string) => void;
+  // User Progress Actions
+  toggleSectionComplete: (sectionId: string) => void;
+  toggleSectionFavorite: (sectionId: string) => void;
+  getSectionProgress: (sectionId: string) => UserProgress | undefined;
+  getCompletedCount: () => number;
+  getFavoriteCount: () => number;
 }
 
 // API 响应类型
