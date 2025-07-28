@@ -38,9 +38,273 @@
 3. **ChatMessageRenderer**: 消息渲染器（集成链接显示）
 4. **LearningStore**: 状态管理（处理跨语言路径）
 
-## 3. 实施过程
+## 3. 匹配算法实现详解
 
-### 3.1 第一阶段：基础功能实现（已存在）
+### 3.1 算法架构
+
+匹配算法采用三层架构设计，基于关键词倒排索引的智能匹配系统：
+
+```mermaid
+graph TD
+    A[用户输入文本] --> B[提取查询关键词]
+    B --> C[检查缓存]
+    C --> D[遍历关键词]
+    D --> E[查找相关章节]
+    E --> F[计算相关性分数]
+    F --> G[排序和过滤]
+    G --> H[返回结果]
+```
+
+**核心组件**：
+- **索引层**：构建知识点倒排索引，支持快速查找
+- **匹配层**：基于关键词的多级相关性计算
+- **结果层**：排序、过滤和返回最相关的结果
+
+### 3.2 技术术语词典
+
+系统维护了两个语言的技术术语词典，这是匹配算法的基础：
+
+#### JavaScript词典 (JS_KEYWORDS)
+```typescript
+const JS_KEYWORDS = {
+  // 基础语法
+  'variable': ['变量', 'var', 'let', 'const', '变量声明', '变量定义'],
+  'datatype': ['数据类型', 'string', 'number', 'boolean', 'undefined', 'null', '类型'],
+  'operator': ['运算符', '操作符', '+', '-', '*', '/', '运算'],
+  'conditional': ['条件', 'if', 'else', 'switch', '条件语句', '判断', '分支'],
+  'loop': ['循环', 'for', 'while', 'do-while', '遍历', '迭代'],
+  'function': ['函数', 'function', '方法', 'method', '函数定义', '函数声明'],
+  
+  // DOM操作
+  'dom': ['DOM', 'DOM树', '文档对象模型', 'document'],
+  'element': ['元素', 'element', 'querySelector', 'getElementById', '选择器', '节点'],
+  'event': ['事件', 'event', 'addEventListener', '事件监听', '事件处理', 'click', '点击'],
+  
+  // 异步编程
+  'async': ['异步', 'async', 'asynchronous', '异步编程', '非阻塞'],
+  'callback': ['回调', 'callback', '回调函数', '回调地狱'],
+  'promise': ['Promise', 'promise', '承诺', 'then', 'catch', 'resolve', 'reject'],
+  'await': ['await', 'async/await', '等待', '异步等待'],
+  'fetch': ['fetch', 'ajax', 'http', '网络请求', 'API调用', '数据获取'],
+  
+  // 面向对象
+  'object': ['对象', 'object', '对象字面量', '属性', 'property'],
+  'this': ['this', 'this关键字', '上下文', 'context', '作用域'],
+  'class': ['类', 'class', 'constructor', '构造函数', '实例', 'instance'],
+  'es6': ['ES6', 'ES2015', '解构', '箭头函数', '模板字符串', 'spread', '展开运算符'],
+  'module': ['模块', 'module', 'import', 'export', '模块化', '导入', '导出']
+};
+```
+
+#### Python词典 (PY_KEYWORDS)
+```typescript
+const PY_KEYWORDS = {
+  'variable': ['变量', '变量定义', '赋值', '=', '变量名'],
+  'datatype': ['数据类型', 'int', 'float', 'str', 'bool', 'list', 'dict', 'tuple', '类型'],
+  'conditional': ['条件', 'if', 'elif', 'else', '条件语句', '判断', '分支'],
+};
+```
+
+### 3.3 索引构建机制
+
+索引构建通过 `buildIndexFromPath` 方法实现，包含以下步骤：
+
+1. **关键词提取**：从章节标题中提取关键词
+2. **别名生成**：为每个关键词生成同义词和别名
+3. **倒排索引**：建立关键词到章节的映射关系
+
+```typescript
+private buildIndexFromPath(path: LearningPath) {
+  for (const chapter of path.chapters) {
+    for (const section of chapter.sections) {
+      // 提取关键词
+      const keywords = this.extractKeywordsFromTitle(section.title, path.language);
+      const aliases = this.getAliasesForKeywords(keywords, path.language);
+      
+      const entry: KnowledgeIndexEntry = {
+        sectionId: section.id,
+        title: section.title,
+        chapterId: chapter.id,
+        chapterTitle: chapter.title,
+        language: path.language,
+        keywords,
+        aliases,
+        concepts: [],
+        contentPreview: '',
+        codeExamples: []
+      };
+      
+      // 存储到主索引
+      this.knowledgeIndex.set(section.id, entry);
+      
+      // 构建倒排索引
+      const allTerms = [...keywords, ...aliases];
+      for (const term of allTerms) {
+        const normalizedTerm = term.toLowerCase();
+        if (!this.keywordToSections.has(normalizedTerm)) {
+          this.keywordToSections.set(normalizedTerm, new Set());
+        }
+        this.keywordToSections.get(normalizedTerm)!.add(section.id);
+      }
+    }
+  }
+}
+```
+
+### 3.4 关键词提取算法
+
+`extractQueryKeywords` 方法实现了多维度关键词提取：
+
+```typescript
+private extractQueryKeywords(text: string): string[] {
+  const keywords: string[] = [];
+  const textLower = text.toLowerCase();
+  
+  // 1. 提取英文单词（3个字母以上）
+  const englishWords = text.match(/[a-zA-Z]{3,}/g) || [];
+  keywords.push(...englishWords);
+  
+  // 2. 提取中文关键词（2-4个字）
+  const chineseWords = text.match(/[\u4e00-\u9fa5]{2,4}/g) || [];
+  keywords.push(...chineseWords);
+  
+  // 3. 检查是否包含已知的技术术语
+  for (const [key, terms] of Object.entries({ ...JS_KEYWORDS, ...PY_KEYWORDS })) {
+    for (const term of terms) {
+      if (textLower.includes(term.toLowerCase()) && term.length > 2) {
+        keywords.push(term);
+      }
+    }
+  }
+  
+  return [...new Set(keywords)]; // 去重
+}
+```
+
+**提取策略**：
+- **英文单词**：匹配3个字母以上的英文单词
+- **中文词汇**：匹配2-4个字的中文词组
+- **技术术语**：匹配预定义的技术术语词典
+
+### 3.5 相关性评分算法
+
+`calculateKeywordScore` 方法实现了多级评分机制：
+
+```typescript
+private calculateKeywordScore(keyword: string, entry: KnowledgeIndexEntry): number {
+  let score = 0;
+  const keywordLower = keyword.toLowerCase();
+  
+  // 标题中的精确匹配得分最高
+  if (entry.title.toLowerCase().includes(keywordLower)) {
+    score += 3;
+  }
+  
+  // 主关键词匹配
+  if (entry.keywords.some(k => k.toLowerCase() === keywordLower)) {
+    score += 2;
+  }
+  
+  // 别名匹配
+  if (entry.aliases.some(a => a.toLowerCase() === keywordLower)) {
+    score += 1.5;
+  }
+  
+  // 部分匹配
+  if (entry.keywords.some(k => k.toLowerCase().includes(keywordLower))) {
+    score += 1;
+  }
+  
+  return score;
+}
+```
+
+**评分等级**：
+- **标题精确匹配**：3分（最高权重）
+- **主关键词匹配**：2分
+- **别名匹配**：1.5分
+- **部分匹配**：1分
+
+### 3.6 跨语言匹配实现
+
+系统通过以下机制实现跨语言匹配：
+
+1. **多语言索引**：同时维护JavaScript和Python的知识索引
+2. **语言过滤**：支持按语言过滤结果，也支持返回所有语言结果
+3. **智能跳转**：点击其他语言的知识点时自动切换语言页面
+
+```typescript
+identifyLinks(
+  text: string,
+  language?: 'python' | 'javascript',  // 可选语言参数
+  maxResults: number = 5
+): SectionLink[] {
+  // ... 匹配逻辑
+  
+  // 如果指定了语言，只返回对应语言的结果
+  // 如果没有指定语言，返回所有语言的结果
+  if (language && entry.language !== language) continue;
+  
+  // ...
+}
+```
+
+### 3.7 性能优化策略
+
+#### 3.7.1 缓存机制
+- **查询缓存**：基于查询文本前100字符的缓存键
+- **增量更新**：避免重复构建已存在的语言索引
+
+```typescript
+// 检查缓存
+const cacheKey = `${text.substring(0, 100)}_${language || 'all'}`;
+if (this.cache.has(cacheKey)) {
+  return this.cache.get(cacheKey)!;
+}
+```
+
+#### 3.7.2 索引优化
+- **倒排索引**：使用 `Map<string, Set<string>>` 实现快速查找
+- **语言跟踪**：使用 `initializedLanguages` Set 避免重复初始化
+
+### 3.8 算法特点总结
+
+#### 优势
+1. **多维度匹配**：结合英文单词、中文词汇和技术术语
+2. **智能评分**：多级评分机制确保结果相关性
+3. **跨语言支持**：支持多语言知识点同时匹配
+4. **性能优化**：缓存和索引优化提升响应速度
+5. **可扩展性**：词典驱动的设计便于添加新术语
+
+#### 局限性
+1. **依赖词典**：需要手动维护技术术语词典
+2. **关键词提取**：主要基于标题，未深入分析内容
+3. **语义理解**：缺乏深度语义理解能力
+
+### 3.9 集成方式
+
+#### 3.9.1 与AI聊天集成
+在 `learningStore.ts` 中，AI回答完成后自动调用匹配算法：
+
+```typescript
+// Identify knowledge links in the AI response (across all languages)
+const knowledgeLinkService = getKnowledgeLinkService();
+const linkedSections = knowledgeLinkService.identifyLinks(
+  accumulatedContent
+  // 不传入语言参数，让它返回所有语言的相关知识点
+);
+```
+
+#### 3.9.2 UI展示
+通过 `ChatMessageRenderer` 和 `SectionLinkTag` 组件展示匹配结果，支持：
+- 语言标识显示（[JS]/[PY]）
+- 相关度百分比显示
+- 跨语言智能跳转
+- 交互式工具提示
+
+## 4. 实施过程
+
+### 4.1 第一阶段：基础功能实现（已存在）
 
 通过代码审查发现，大部分基础设施已经实现：
 - ✅ 数据类型定义（`SectionLink`、`ChatMessage` 扩展）
@@ -52,7 +316,7 @@
 - `ChatMessageRenderer` 接收但未使用 `linkedSections` 属性
 - 知识点识别仅限于当前语言
 
-### 3.2 第二阶段：完善基础功能
+### 4.2 第二阶段：完善基础功能
 
 #### 修改 ChatMessageRenderer.tsx
 ```typescript
@@ -76,13 +340,13 @@
 #### 更新 AIChatSidebar.tsx
 ```typescript
 // 传递 linkedSections 属性
-<ChatMessageRenderer 
+<ChatMessageRenderer
   content={message.content}
   linkedSections={message.linkedSections}
 />
 ```
 
-### 3.3 第三阶段：实现跨语言支持
+### 4.3 第三阶段：实现跨语言支持
 
 这是实施过程中最具挑战性的部分。
 
@@ -177,7 +441,7 @@ const linkedSections = knowledgeLinkService.identifyLinks(
 );
 ```
 
-### 3.4 第四阶段：UI 增强
+### 4.4 第四阶段：UI 增强
 
 #### 添加语言标识
 ```typescript
@@ -268,6 +532,7 @@ const handleClick = async () => {
 - ✅ 智能跨语言跳转
 - ✅ 清晰的语言标识
 - ✅ 良好的用户体验
+- ✅ 高效的匹配算法
 
 整个实施过程体现了渐进式开发的优势：
 1. 先完善基础功能
@@ -276,4 +541,4 @@ const handleClick = async () => {
 4. 逐步实施改进
 5. 充分测试验证
 
-通过这次实施，不仅完成了功能需求，还建立了一个可扩展的知识链接系统架构，为后续功能增强奠定了基础。
+通过这次实施，不仅完成了功能需求，还建立了一个可扩展的知识链接系统架构，为后续功能增强奠定了基础。特别是匹配算法的设计，采用了多维度关键词提取、多级相关性评分和倒排索引等技术，确保了系统的准确性和性能。该算法不仅支持跨语言知识点识别，还具备良好的可扩展性，为未来添加更多编程语言和技术领域提供了坚实的技术基础。
