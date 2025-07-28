@@ -55,6 +55,31 @@ export interface UIState {
   searchQuery: string;
 }
 
+// 知识点链接
+export interface SectionLink {
+  sectionId: string;          // 章节 ID
+  title: string;              // 章节标题
+  chapterId: string;          // 所属章节 ID
+  chapterTitle?: string;      // 章节标题
+  language: 'python' | 'javascript';
+  matchedKeywords?: string[]; // 匹配到的关键词
+  relevanceScore?: number;    // 相关性分数 (0-1)
+}
+
+// 知识点索引条目
+export interface KnowledgeIndexEntry {
+  sectionId: string;
+  title: string;
+  chapterId: string;
+  chapterTitle: string;
+  language: 'python' | 'javascript';
+  keywords: string[];           // 主要关键词
+  aliases: string[];            // 同义词和别名
+  concepts: string[];           // 相关概念
+  contentPreview?: string;      // 内容预览（前100字）
+  codeExamples?: string[];      // 代码示例中的关键函数/类名
+}
+
 // Pyodide状态类型
 export type PyodideStatus = 'unloaded' | 'loading' | 'ready' | 'error';
 
@@ -62,6 +87,7 @@ export type PyodideStatus = 'unloaded' | 'loading' | 'ready' | 'error';
 export interface LearningState {
   currentPath: LearningPath | null;
   currentSection: SectionContent | null;
+  loadedPaths: { javascript?: LearningPath; python?: LearningPath }; // 存储所有已加载的路径
   loading: {
     path: boolean;
     section: boolean;
@@ -97,6 +123,7 @@ export interface ChatMessage {
   sender: 'user' | 'ai';
   timestamp: number; // 使用时间戳以方便序列化
   contextReference?: ContextReference; // 引用的上下文内容
+  linkedSections?: SectionLink[]; // 相关知识点链接
 }
 
 // 上下文引用
@@ -116,6 +143,7 @@ export interface ChatSession {
 
 export interface LearningActions {
   loadPath: (language: 'python' | 'javascript') => Promise<void>;
+  initializeAllPaths: () => Promise<void>; // 初始化所有语言的学习路径
   loadSection: (sectionId: string) => Promise<void>;
   updateUserCode: (sectionId: string, code: string) => void;
   updateUIState: (uiState: Partial<UIState>) => void;
@@ -126,6 +154,7 @@ export interface LearningActions {
   renameChat: (sessionId: string, newTitle: string) => void;
   addMessageToActiveChat: (message: Partial<ChatMessage> & { sender: 'user' | 'ai', content: string }) => void;
   updateMessageContent: (sessionId: string, messageId: string, content: string) => void;
+  updateMessageLinks: (sessionId: string, messageId: string, linkedSections: SectionLink[]) => void;
   // AI Provider Actions
   setAIProvider: (provider: AIProviderType) => void;
   sendChatMessage: (content: string, contextReference?: ContextReference | null, language?: 'python' | 'javascript') => Promise<void>;

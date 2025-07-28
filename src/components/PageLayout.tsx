@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useLearningStore } from '@/store/learningStore';
 
 function Header() {
   return (
@@ -20,6 +22,12 @@ function Header() {
 export function PageLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLearnPage = pathname.startsWith('/learn');
+  const initializeAllPaths = useLearningStore(state => state.initializeAllPaths);
+  
+  useEffect(() => {
+    // 在应用启动时初始化所有语言的学习路径
+    initializeAllPaths();
+  }, [initializeAllPaths]);
 
   if (isLearnPage) {
     return <>{children}</>;

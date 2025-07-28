@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { LearningState, LearningActions, LearningPath, SectionContent, ChatMessage, ChatSession, PyodideStatus, ContextReference, AIProviderType, Chapter } from '@/types';
+import type { LearningState, LearningActions, LearningPath, SectionContent, ChatMessage, ChatSession, PyodideStatus, ContextReference, AIProviderType, Chapter, SectionLink } from '@/types';
 import { pyodideService } from '@/services/pyodideService';
+import { getKnowledgeLinkService } from '@/services/knowledgeLinkService';
 
 // Mock API functions - replace with real API calls
 const mockLearningApi = {
@@ -164,6 +165,7 @@ export const useLearningStore = create<LearningState & LearningActions>()(
       // State
       currentPath: null,
       currentSection: null,
+      loadedPaths: {}, // 初始化为空对象
       loading: {
         path: false,
         section: false,
@@ -189,6 +191,49 @@ export const useLearningStore = create<LearningState & LearningActions>()(
       userProgress: {},
 
       // Actions
+      initializeAllPaths: async () => {
+        const state = get();
+        if (state.loading.path) return;
+        
+        set(state => ({
+          loading: { ...state.loading, path: true },
+          error: { ...state.error, path: null }
+        }));
+        
+        try {
+          // 并行加载所有语言的学习路径
+          const [pythonPath, javascriptPath] = await Promise.all([
+            mockLearningApi.getLearningPath('python'),
+            mockLearningApi.getLearningPath('javascript')
+          ]);
+          
+          const loadedPaths = {
+            python: pythonPath,
+            javascript: javascriptPath
+          };
+          
+          set({
+            loadedPaths,
+            loading: { ...get().loading, path: false },
+            error: { ...get().error, path: null }
+          });
+          
+          // 初始化知识点服务
+          const knowledgeLinkService = getKnowledgeLinkService();
+          await knowledgeLinkService.initialize(loadedPaths);
+          
+          // 如果没有聊天会话，创建一个默认的
+          if (get().chatSessions.length === 0) {
+            get().createNewChat();
+          }
+        } catch (error) {
+          set({
+            loading: { ...get().loading, path: false },
+            error: { ...get().error, path: error instanceof Error ? error.message : 'Failed to initialize paths' }
+          });
+        }
+      },
+      
       loadPath: async (language: 'python' | 'javascript') => {
         const state = get();
         if (state.loading.path || state.currentPath?.language === language) {
@@ -202,11 +247,23 @@ export const useLearningStore = create<LearningState & LearningActions>()(
 
         try {
           const path = await mockLearningApi.getLearningPath(language);
+          
+          // Update loadedPaths with the new path
+          const updatedLoadedPaths = {
+            ...get().loadedPaths,
+            [language]: path
+          };
+          
           set({
             currentPath: path,
+            loadedPaths: updatedLoadedPaths,
             loading: { ...get().loading, path: false },
             error: { ...get().error, path: null }
           });
+          
+          // Initialize knowledge link service with all loaded paths
+          const knowledgeLinkService = getKnowledgeLinkService();
+          await knowledgeLinkService.initialize(updatedLoadedPaths);
           
           // If no chats exist, create a default one
           if (get().chatSessions.length === 0) {
@@ -351,6 +408,22 @@ export const useLearningStore = create<LearningState & LearningActions>()(
                 ...session,
                 messages: session.messages.map(message =>
                   message.id === messageId ? { ...message, content } : message
+                ),
+              };
+            }
+            return session;
+          }),
+        }));
+      },
+
+      updateMessageLinks: (sessionId: string, messageId: string, linkedSections: SectionLink[]) => {
+        set(state => ({
+          chatSessions: state.chatSessions.map(session => {
+            if (session.id === sessionId) {
+              return {
+                ...session,
+                messages: session.messages.map(message =>
+                  message.id === messageId ? { ...message, linkedSections } : message
                 ),
               };
             }
@@ -517,6 +590,17 @@ export const useLearningStore = create<LearningState & LearningActions>()(
           }
           // Remove the typing cursor at the end
           get().updateMessageContent(activeSessionId, aiMessageId, accumulatedContent);
+          
+          // Identify knowledge links in the AI response (across all languages)
+          const knowledgeLinkService = getKnowledgeLinkService();
+          const linkedSections = knowledgeLinkService.identifyLinks(
+            accumulatedContent
+            // 不传入语言参数，让它返回所有语言的相关知识点
+          );
+          
+          if (linkedSections.length > 0) {
+            get().updateMessageLinks(activeSessionId, aiMessageId, linkedSections);
+          }
 
         } catch (error) {
           console.error('Chat error:', error);

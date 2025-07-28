@@ -159,7 +159,10 @@ export function AIChatSidebar() {
                             : 'bg-muted'
                         }`}
                       >
-                        <ChatMessageRenderer content={message.content} />
+                        <ChatMessageRenderer 
+                          content={message.content}
+                          linkedSections={message.linkedSections}
+                        />
                       </div>
                       <div className={`text-xs text-muted-foreground px-1 ${
                         message.sender === 'user' ? 'text-right' : ''
