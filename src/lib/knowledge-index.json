@@ -1,0 +1,232 @@
+[
+  {
+    "sectionId": "js-sec-1-1-hello-world",
+    "title": "1.1 \"你好，世界\"与控制台",
+    "keywords": [
+      "你好，世界与控制台",
+      "1.1 \"你好，世界\"与控制台"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-1-basics"
+  },
+  {
+    "sectionId": "js-sec-1-2-variables",
+    "title": "1.2 变量与数据类型",
+    "keywords": [
+      "变量与数据类型",
+      "1.2 变量与数据类型"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-1-basics"
+  },
+  {
+    "sectionId": "js-sec-1-3-operators",
+    "title": "1.3 运算符",
+    "keywords": [
+      "运算符",
+      "1.3 运算符"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-1-basics"
+  },
+  {
+    "sectionId": "js-sec-1-4-conditionals",
+    "title": "1.4 条件语句",
+    "keywords": [
+      "条件语句",
+      "1.4 条件语句"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-1-basics"
+  },
+  {
+    "sectionId": "js-sec-1-5-loops",
+    "title": "1.5 循环语句",
+    "keywords": [
+      "循环语句",
+      "1.5 循环语句"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-1-basics"
+  },
+  {
+    "sectionId": "js-sec-1-6-functions-intro",
+    "title": "1.6 函数初探",
+    "keywords": [
+      "函数初探",
+      "1.6 函数初探"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-1-basics"
+  },
+  {
+    "sectionId": "js-sec-2-1-what-is-dom",
+    "title": "2.1 什么是DOM树",
+    "keywords": [
+      "什么是dom树",
+      "2.1 什么是dom树"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-2-dom"
+  },
+  {
+    "sectionId": "js-sec-2-2-selecting-elements",
+    "title": "2.2 选取页面元素",
+    "keywords": [
+      "选取页面元素",
+      "2.2 选取页面元素"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-2-dom"
+  },
+  {
+    "sectionId": "js-sec-2-3-manipulating-elements",
+    "title": "2.3 修改元素内容与样式",
+    "keywords": [
+      "修改元素内容与样式",
+      "2.3 修改元素内容与样式"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-2-dom"
+  },
+  {
+    "sectionId": "js-sec-2-4-creating-elements",
+    "title": "2.4 创建与插入新元素",
+    "keywords": [
+      "创建与插入新元素",
+      "2.4 创建与插入新元素"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-2-dom"
+  },
+  {
+    "sectionId": "js-sec-2-5-events-intro",
+    "title": "2.5 事件监听与处理",
+    "keywords": [
+      "事件监听与处理",
+      "2.5 事件监听与处理"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-2-dom"
+  },
+  {
+    "sectionId": "js-sec-2-6-event-object",
+    "title": "2.6 理解事件对象",
+    "keywords": [
+      "理解事件对象",
+      "2.6 理解事件对象"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-2-dom"
+  },
+  {
+    "sectionId": "js-sec-3-1-sync-vs-async",
+    "title": "3.1 同步与异步的概念",
+    "keywords": [
+      "同步与异步的概念",
+      "3.1 同步与异步的概念"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-3-async"
+  },
+  {
+    "sectionId": "js-sec-3-2-callbacks",
+    "title": "3.2 回调函数",
+    "keywords": [
+      "回调函数",
+      "3.2 回调函数"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-3-async"
+  },
+  {
+    "sectionId": "js-sec-3-3-promises",
+    "title": "3.3 Promise入门",
+    "keywords": [
+      "promise入门",
+      "3.3 promise入门"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-3-async"
+  },
+  {
+    "sectionId": "js-sec-3-4-promise-chains",
+    "title": "3.4 Promise链式调用",
+    "keywords": [
+      "promise链式调用",
+      "3.4 promise链式调用"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-3-async"
+  },
+  {
+    "sectionId": "js-sec-3-5-async-await",
+    "title": "3.5 async/await",
+    "keywords": [
+      "async/await",
+      "3.5 async/await"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-3-async"
+  },
+  {
+    "sectionId": "js-sec-3-6-fetch-api",
+    "title": "3.6 使用fetch进行网络请求",
+    "keywords": [
+      "使用fetch进行网络请求",
+      "3.6 使用fetch进行网络请求"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-3-async"
+  },
+  {
+    "sectionId": "js-sec-4-1-objects-intro",
+    "title": "4.1 对象：属性与方法",
+    "keywords": [
+      "对象：属性与方法",
+      "4.1 对象：属性与方法"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-4-modern-js"
+  },
+  {
+    "sectionId": "js-sec-4-2-this-keyword",
+    "title": "4.2 `this`关键字的核心概念",
+    "keywords": [
+      "this关键字的核心概念",
+      "4.2 `this`关键字的核心概念"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-4-modern-js"
+  },
+  {
+    "sectionId": "js-sec-4-3-classes",
+    "title": "4.3 `class`：创建对象的蓝图",
+    "keywords": [
+      "class：创建对象的蓝图",
+      "4.3 `class`：创建对象的蓝图"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-4-modern-js"
+  },
+  {
+    "sectionId": "js-sec-4-4-es6-features",
+    "title": "4.4 ES6常用新特性",
+    "keywords": [
+      "es6常用新特性",
+      "4.4 es6常用新特性"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-4-modern-js"
+  },
+  {
+    "sectionId": "js-sec-4-5-modules",
+    "title": "4.5 模块化：import与export",
+    "keywords": [
+      "模块化：import与export",
+      "4.5 模块化：import与export"
+    ],
+    "language": "javascript",
+    "chapterId": "js-ch-4-modern-js"
+  }
+]

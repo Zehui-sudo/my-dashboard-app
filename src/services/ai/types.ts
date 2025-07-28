@@ -1,4 +1,4 @@
-import { ChatMessage, ContextReference } from '@/types';
+import { ChatMessage, ContextReference, SectionLink } from '@/types';
 
 export type AIProviderType = 'openai' | 'anthropic' | 'deepseek' | 'doubao';
 
@@ -21,6 +21,7 @@ export interface ChatResponse {
     completionTokens: number;
     totalTokens: number;
   };
+  linkedSections?: SectionLink[];
 }
 
 export abstract class AIProvider {

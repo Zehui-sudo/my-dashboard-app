@@ -24,10 +24,8 @@ export class OpenAIProvider extends AIProvider {
   private formatMessages(messages: ChatMessage[]) {
     let processedMessages = [...messages];
 
-    // If the first message is from the AI and there are subsequent messages, remove it.
-    // Most chat APIs require the conversation to start with a user message.
     if (processedMessages.length > 1 && processedMessages[0].sender === 'ai') {
-      processedMessages.shift(); // Removes the initial AI greeting
+      processedMessages.shift();
     }
 
     return processedMessages.map(msg => ({
@@ -37,13 +35,20 @@ export class OpenAIProvider extends AIProvider {
   }
 
   private _createParserStream(stream: ReadableStream): ReadableStream {
+    let buffer = '';
     const decoder = new TextDecoder();
     const transformStream = new TransformStream({
-      async transform(chunk, controller) {
-        const text = decoder.decode(chunk, { stream: true });
-        const lines = text.split('\n').filter(line => line.trim().startsWith('data:'));
+      transform(chunk, controller) {
+        buffer += decoder.decode(chunk, { stream: true });
+        const lines = buffer.split('\n');
         
+        // The last line might be incomplete, so we keep it in the buffer for the next chunk.
+        buffer = lines.pop() || '';
+
         for (const line of lines) {
+          if (line.trim() === '' || !line.trim().startsWith('data:')) {
+            continue;
+          }
           const jsonStr = line.replace(/^data: /, '');
           if (jsonStr === '[DONE]') {
             controller.terminate();
@@ -56,10 +61,11 @@ export class OpenAIProvider extends AIProvider {
               controller.enqueue(new TextEncoder().encode(delta));
             }
           } catch (e) {
-            console.error('Failed to parse stream chunk in provider:', jsonStr);
+            // This can happen if the JSON is still incomplete. We'll wait for more chunks.
+            console.error('Failed to parse stream chunk, will retry with more data. Chunk:', line);
           }
         }
-      }
+      },
     });
 
     return stream.pipeThrough(transformStream);
@@ -72,7 +78,6 @@ export class OpenAIProvider extends AIProvider {
 
     const { messages, model = this.model, temperature = 0.7, maxTokens = 2000, contextReference, stream = false, language } = request;
 
-    // Add context if provided
     let formattedMessages = this.formatMessages(messages);
     if (contextReference) {
       const sourceText = contextReference.source ? `的[${contextReference.source}]这一章节` : '';

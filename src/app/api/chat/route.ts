@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAIProvider } from '@/services/ai';
+import { getKnowledgeLinkService } from '@/services/knowledgeLinkService';
 
 export const runtime = 'edge';
 
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
 
     const aiProvider = createAIProvider(provider);
     
-    const stream = await aiProvider.chat({
+    const aiStream = await aiProvider.chat({
       messages,
       model,
       contextReference,
@@ -25,14 +26,35 @@ export async function POST(req: NextRequest) {
       language,
     });
 
-    if (!(stream instanceof ReadableStream)) {
-      return new Response(JSON.stringify(stream), {
+    if (!(aiStream instanceof ReadableStream)) {
+      return new Response(JSON.stringify(aiStream), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    return new Response(stream, {
+    const knowledgeLinkService = getKnowledgeLinkService();
+    let accumulatedContent = '';
+
+    const transformStream = new TransformStream({
+      transform(chunk, controller) {
+        const textDelta = new TextDecoder().decode(chunk);
+        accumulatedContent += textDelta;
+        const outputChunk = JSON.stringify({ type: 'delta', content: textDelta });
+        controller.enqueue(new TextEncoder().encode(outputChunk + '\n'));
+      },
+      flush(controller) {
+        const links = knowledgeLinkService.identifyLinks(accumulatedContent, language);
+        if (links.length > 0) {
+          const linksChunk = JSON.stringify({ type: 'links', data: links });
+          controller.enqueue(new TextEncoder().encode(linksChunk + '\n'));
+        }
+      }
+    });
+
+    const finalStream = aiStream.pipeThrough(transformStream);
+
+    return new Response(finalStream, {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',

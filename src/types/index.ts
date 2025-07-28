@@ -91,12 +91,24 @@ export interface LearningState {
 }
 
 // AI 对话消息
+
+// 知识点链接
+export interface SectionLink {
+  sectionId: string;          // 章节 ID
+  title: string;              // 章节标题
+  chapterId: string;          // 所属章节 ID
+  language: 'python' | 'javascript';
+  matchedKeywords?: string[]; // 匹配到的关键词
+  relevanceScore?: number;    // 相关性分数
+}
+
 export interface ChatMessage {
   id: string;
   content: string;
   sender: 'user' | 'ai';
   timestamp: number; // 使用时间戳以方便序列化
   contextReference?: ContextReference; // 引用的上下文内容
+  linkedSections?: SectionLink[]; // 新增：相关知识点链接
 }
 
 // 上下文引用
@@ -126,6 +138,7 @@ export interface LearningActions {
   renameChat: (sessionId: string, newTitle: string) => void;
   addMessageToActiveChat: (message: Partial<ChatMessage> & { sender: 'user' | 'ai', content: string }) => void;
   updateMessageContent: (sessionId: string, messageId: string, content: string) => void;
+  updateMessageLinks: (sessionId: string, messageId: string, links: SectionLink[]) => void;
   // AI Provider Actions
   setAIProvider: (provider: AIProviderType) => void;
   sendChatMessage: (content: string, contextReference?: ContextReference | null, language?: 'python' | 'javascript') => Promise<void>;

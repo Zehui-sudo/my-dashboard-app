@@ -359,6 +359,22 @@ export const useLearningStore = create<LearningState & LearningActions>()(
         }));
       },
 
+      updateMessageLinks: (sessionId: string, messageId: string, links: import('@/types').SectionLink[]) => {
+        set(state => ({
+          chatSessions: state.chatSessions.map(session => {
+            if (session.id === sessionId) {
+              return {
+                ...session,
+                messages: session.messages.map(message =>
+                  message.id === messageId ? { ...message, linkedSections: links } : message
+                ),
+              };
+            }
+            return session;
+          }),
+        }));
+      },
+
       // Pyodide Actions
       loadPyodide: async () => {
         const state = get();
@@ -506,16 +522,33 @@ export const useLearningStore = create<LearningState & LearningActions>()(
           const reader = response.body.getReader();
           const decoder = new TextDecoder();
           let accumulatedContent = '';
+          let buffer = '';
 
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
             
-            const delta = decoder.decode(value);
-            accumulatedContent += delta;
-            get().updateMessageContent(activeSessionId, aiMessageId, accumulatedContent + '▍');
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            
+            buffer = lines.pop() || ''; // Keep the last, possibly incomplete line
+
+            for (const line of lines) {
+              if (line.trim() === '') continue;
+              try {
+                const chunk = JSON.parse(line);
+                if (chunk.type === 'delta' && chunk.content) {
+                  accumulatedContent += chunk.content;
+                  get().updateMessageContent(activeSessionId, aiMessageId, accumulatedContent + '▍');
+                } else if (chunk.type === 'links' && chunk.data) {
+                  get().updateMessageLinks(activeSessionId, aiMessageId, chunk.data);
+                }
+              } catch (e) {
+                console.error("Failed to parse stream line:", line, e);
+              }
+            }
           }
-          // Remove the typing cursor at the end
+          // Final update to remove the cursor
           get().updateMessageContent(activeSessionId, aiMessageId, accumulatedContent);
 
         } catch (error) {
