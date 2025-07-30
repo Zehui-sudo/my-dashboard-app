@@ -22,7 +22,7 @@ export class OpenAIProvider extends AIProvider {
   }
 
   private formatMessages(messages: ChatMessage[]) {
-    let processedMessages = [...messages];
+    const processedMessages = [...messages];
 
     // If the first message is from the AI and there are subsequent messages, remove it.
     // Most chat APIs require the conversation to start with a user message.
@@ -55,7 +55,7 @@ export class OpenAIProvider extends AIProvider {
             if (delta) {
               controller.enqueue(new TextEncoder().encode(delta));
             }
-          } catch (e) {
+          } catch {
             console.error('Failed to parse stream chunk in provider:', jsonStr);
           }
         }

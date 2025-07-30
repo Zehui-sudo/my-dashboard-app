@@ -47,7 +47,7 @@ export class DoubaoProvider extends AIProvider {
             if (delta) {
               controller.enqueue(new TextEncoder().encode(delta));
             }
-          } catch (e) {
+          } catch {
             console.error('Failed to parse Doubao stream chunk:', jsonStr);
           }
         }

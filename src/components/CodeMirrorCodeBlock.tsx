@@ -4,9 +4,8 @@ import React, { memo, useState, useEffect, useRef } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { python } from '@codemirror/lang-python';
-import { EditorView, highlightActiveLine, highlightActiveLineGutter, Decoration, ViewPlugin, ViewUpdate } from '@codemirror/view';
-import { Compartment, EditorState, RangeSet, StateEffect, StateField } from '@codemirror/state';
-import { syntaxTree } from '@codemirror/language';
+import { EditorView, highlightActiveLine, highlightActiveLineGutter, Decoration } from '@codemirror/view';
+import { Compartment, RangeSet, StateEffect, StateField } from '@codemirror/state';
 import { githubLight, githubDark } from '@uiw/codemirror-theme-github';
 
 // Define effects for search highlighting
@@ -26,7 +25,7 @@ const searchHighlightField = StateField.define<RangeSet<Decoration>>({
   },
   update(value, transaction) {
     value = value.map(transaction.changes);
-    for (let effect of transaction.effects) {
+    for (const effect of transaction.effects) {
       if (effect.is(addSearchHighlight)) {
         value = effect.value;
       } else if (effect.is(clearSearchHighlight)) {
@@ -177,7 +176,7 @@ export const CodeMirrorCodeBlock = memo(function CodeMirrorCodeBlock({
         highlightSearchMatches(viewRef.current!, searchTerm);
       }, 50);
     }
-  }, [value]);
+  }, [value, enableSearch, searchTerm]);
 
   const languageExtension = language === 'javascript' 
     ? javascript({ jsx: true, typescript: true })

@@ -36,9 +36,9 @@ export function ChatHistoryView({ onBack, onSelectChat }: ChatHistoryViewProps) 
   };
 
   return (
-    <div className="h-full flex flex-col bg-background">
+    <div className="h-full flex flex-col bg-background rounded-lg border">
       {/* Header */}
-      <header className="p-3 border-b flex items-center gap-2 sticky top-0 bg-background z-10">
+      <header className="p-3 border-b flex items-center gap-2 flex-shrink-0">
         <Button size="icon" variant="ghost" onClick={onBack} className="h-8 w-8">
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -46,7 +46,7 @@ export function ChatHistoryView({ onBack, onSelectChat }: ChatHistoryViewProps) 
       </header>
 
       {/* Search Bar */}
-      <div className="p-3 border-b">
+      <div className="p-3 border-b flex-shrink-0">
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -60,7 +60,7 @@ export function ChatHistoryView({ onBack, onSelectChat }: ChatHistoryViewProps) 
       </div>
 
       {/* Chat List */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 overflow-hidden">
         <div className="p-3 space-y-2">
           {filteredSessions.map(session => (
             <div

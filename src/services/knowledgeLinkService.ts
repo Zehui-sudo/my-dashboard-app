@@ -223,7 +223,7 @@ export class KnowledgeLinkService {
     keywords.push(...chineseWords);
     
     // 检查是否包含已知的技术术语
-    for (const [key, terms] of Object.entries({ ...JS_KEYWORDS, ...PY_KEYWORDS })) {
+    for (const [, terms] of Object.entries({ ...JS_KEYWORDS, ...PY_KEYWORDS })) {
       for (const term of terms) {
         if (textLower.includes(term.toLowerCase()) && term.length > 2) {
           keywords.push(term);

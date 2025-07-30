@@ -26,7 +26,7 @@ export function ContentDisplay() {
   const currentSectionIdRef = useRef(currentSection?.id);
   
   // Enable text selection
-  useTextSelection(contentRef);
+  useTextSelection(contentRef as React.RefObject<HTMLElement>);
 
   // Only reset scroll when section changes, not when content updates
   useEffect(() => {

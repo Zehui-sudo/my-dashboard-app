@@ -22,6 +22,20 @@ export function SectionLinkTag({ link, onClick }: SectionLinkTagProps) {
   const { loadPath, loadSection } = useLearningStore();
   const languageLabel = link.language === 'javascript' ? 'JS' : 'PY';
   
+  // 显示融合后的分数或原始分数
+  const displayScore = link.fusedScore ?? link.relevanceScore;
+  const confidenceColor = {
+    high: 'border-green-500',
+    medium: 'border-yellow-500',
+    low: 'border-red-500'
+  }[link.confidence || 'medium'];
+  
+  const matchTypeIcon = {
+    keyword: '🔑',
+    semantic: '🧠',
+    hybrid: '⚡'
+  }[link.matchType || 'keyword'];
+  
   const handleClick = async () => {
     // 如果是跨语言跳转，先切换到对应语言的页面
     const currentPath = useLearningStore.getState().currentPath;
@@ -44,9 +58,10 @@ export function SectionLinkTag({ link, onClick }: SectionLinkTagProps) {
             variant="outline"
             size="sm"
             onClick={handleClick}
-            className="gap-1 h-7 px-2 text-xs"
+            className={`gap-1 h-7 px-2 text-xs ${confidenceColor} border-l-2`}
           >
             <span className="font-mono text-[10px] text-muted-foreground">[{languageLabel}]</span>
+            <span className="text-xs">{matchTypeIcon}</span>
             <BookOpen className="h-3 w-3" />
             {link.title}
           </Button>
@@ -62,14 +77,20 @@ export function SectionLinkTag({ link, onClick }: SectionLinkTagProps) {
                 章节：{link.chapterTitle}
               </p>
             )}
-            {link.matchedKeywords && link.matchedKeywords.length > 0 && (
+            {link.explanation && (
               <p className="text-xs text-muted-foreground">
-                相关：{link.matchedKeywords.slice(0, 3).join(', ')}
+                {link.explanation}
               </p>
             )}
-            {link.relevanceScore !== undefined && (
+            {displayScore !== undefined && (
               <p className="text-xs text-muted-foreground">
-                相关度：{Math.round(link.relevanceScore * 100)}%
+                相关度：{Math.round(displayScore * 100)}%
+                {link.confidence && ` (${link.confidence} 置信度)`}
+              </p>
+            )}
+            {link.matchType && (
+              <p className="text-xs text-muted-foreground">
+                匹配方式：{link.matchType === 'keyword' ? '关键词' : link.matchType === 'semantic' ? '语义' : '混合'}
               </p>
             )}
           </div>

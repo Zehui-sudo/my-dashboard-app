@@ -20,7 +20,6 @@ export function NavigationSidebar() {
   const loadSection = useLearningStore((state) => state.loadSection);
   const loadPath = useLearningStore((state) => state.loadPath);
   const uiState = useLearningStore((state) => state.uiState);
-  const updateUserCode = useLearningStore((state) => state.updateUserCode);
   const updateUIState = useLearningStore((state) => state.updateUIState);
   const userProgress = useLearningStore((state) => state.userProgress);
   const { expandedChapters, searchQuery } = uiState;
@@ -46,8 +45,8 @@ export function NavigationSidebar() {
 
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-4 border-b">
+    <div className="h-full flex flex-col bg-background rounded-lg border">
+      <div className="p-4 border-b flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">课程目录</h2>
           {currentPath && (
@@ -80,7 +79,7 @@ export function NavigationSidebar() {
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 overflow-hidden">
         <div className="p-4">
           {filteredChapters.length === 0 ? (
             <div className="text-center text-sm text-muted-foreground py-8">
@@ -145,7 +144,7 @@ export function NavigationSidebar() {
         </div>
       </ScrollArea>
 
-      <div className="border-t p-4">
+      <div className="border-t p-4 flex-shrink-0">
         <div className="text-xs text-muted-foreground text-center">
           总进度: {currentPath?.chapters.reduce((acc, ch) => acc + ch.sections.length, 0) || 0} 章节
         </div>

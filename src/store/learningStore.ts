@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { LearningState, LearningActions, LearningPath, SectionContent, ChatMessage, ChatSession, PyodideStatus, ContextReference, AIProviderType, Chapter, SectionLink } from '@/types';
 import { pyodideService } from '@/services/pyodideService';
 import { getKnowledgeLinkService } from '@/services/knowledgeLinkService';
+import { getHybridKnowledgeLinkService } from '@/services/hybridKnowledgeLinkService';
 
 // Mock API functions - replace with real API calls
 const mockLearningApi = {
@@ -189,6 +190,7 @@ export const useLearningStore = create<LearningState & LearningActions>()(
       selectedContent: null,
       userName: undefined,
       userProgress: {},
+      hybridServiceInitialized: false,
 
       // Actions
       initializeAllPaths: async () => {
@@ -532,7 +534,46 @@ export const useLearningStore = create<LearningState & LearningActions>()(
         return Object.values(progress).filter(p => p.isFavorite).length;
       },
 
-      sendChatMessage: async (content: string, contextReference?: ContextReference | null, language?: 'python' | 'javascript') => {
+      // 初始化混合知识链接服务
+      initializeHybridService: async () => {
+        const state = get();
+        if (state.hybridServiceInitialized) return;
+
+        try {
+          const hybridService = getHybridKnowledgeLinkService();
+          
+          // 获取所有章节数据
+          const allSections: Array<{
+            id: string;
+            title: string;
+            chapterTitle: string;
+            language: 'python' | 'javascript';
+          }> = [];
+          Object.values(state.loadedPaths).forEach(path => {
+            if (path) {
+              path.chapters.forEach(chapter => {
+                chapter.sections.forEach(section => {
+                  allSections.push({
+                    ...section,
+                    chapterTitle: chapter.title,
+                    language: path.language
+                  });
+                });
+              });
+            }
+          });
+
+          // 初始化语义索引
+          await hybridService.initializeSemanticIndex(allSections);
+          
+          set({ hybridServiceInitialized: true });
+          console.log('混合知识链接服务初始化完成');
+        } catch (error) {
+          console.error('混合知识链接服务初始化失败:', error);
+        }
+      },
+
+      sendChatMessage: async (content: string, contextReference?: ContextReference | null) => {
         const state = get();
         const activeSessionId = state.activeChatSessionId;
         
@@ -591,15 +632,31 @@ export const useLearningStore = create<LearningState & LearningActions>()(
           // Remove the typing cursor at the end
           get().updateMessageContent(activeSessionId, aiMessageId, accumulatedContent);
           
-          // Identify knowledge links in the AI response (across all languages)
-          const knowledgeLinkService = getKnowledgeLinkService();
-          const linkedSections = knowledgeLinkService.identifyLinks(
-            accumulatedContent
-            // 不传入语言参数，让它返回所有语言的相关知识点
-          );
-          
-          if (linkedSections.length > 0) {
-            get().updateMessageLinks(activeSessionId, aiMessageId, linkedSections);
+          // Identify knowledge links in the AI response using hybrid service
+          try {
+            const state = get();
+            let linkedSections: SectionLink[] = [];
+            
+            if (state.hybridServiceInitialized) {
+              // 使用混合匹配服务
+              const hybridService = getHybridKnowledgeLinkService();
+              linkedSections = await hybridService.identifyLinks(
+                accumulatedContent,
+                { language: state.currentPath?.language }
+              );
+            } else {
+              // 降级到原始的关键词匹配
+              const knowledgeLinkService = getKnowledgeLinkService();
+              linkedSections = knowledgeLinkService.identifyLinks(
+                accumulatedContent
+              );
+            }
+            
+            if (linkedSections.length > 0) {
+              get().updateMessageLinks(activeSessionId, aiMessageId, linkedSections);
+            }
+          } catch (error) {
+            console.error('知识点链接识别失败:', error);
           }
 
         } catch (error) {
@@ -622,6 +679,7 @@ export const useLearningStore = create<LearningState & LearningActions>()(
         userName: state.userName,
         aiProvider: state.aiProvider,
         userProgress: state.userProgress,
+        hybridServiceInitialized: state.hybridServiceInitialized,
       }),
     }
   )

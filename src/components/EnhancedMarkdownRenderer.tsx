@@ -52,7 +52,7 @@ export function EnhancedMarkdownRenderer({
         components={{
           p: ({ node, children }) => {
             // Check if the paragraph contains a table. If so, render children directly.
-            const hasTable = node.children.some(child => child.type === 'element' && child.tagName === 'table');
+            const hasTable = node?.children?.some(child => child.type === 'element' && child.tagName === 'table');
             if (hasTable) {
               return <>{children}</>;
             }
@@ -68,7 +68,7 @@ export function EnhancedMarkdownRenderer({
               const lang = match[1];
               // Support both "python" and "interactive-python" formats
               if (lang === 'interactive-python' || lang === 'python') {
-                const sectionId = `markdown-block-${node.position?.start.line || Math.random()}`;
+                const sectionId = `markdown-block-${node?.position?.start.line || Math.random()}`;
                 return (
                   <div className="my-6">
                     <InteractiveCodeBlock
@@ -80,7 +80,7 @@ export function EnhancedMarkdownRenderer({
                   </div>
                 );
               } else if (lang === 'interactive-javascript' || lang === 'javascript') {
-                const sectionId = `markdown-block-${node.position?.start.line || Math.random()}`;
+                const sectionId = `markdown-block-${node?.position?.start.line || Math.random()}`;
                 return (
                   <div className="my-6">
                     <InteractiveCodeBlock

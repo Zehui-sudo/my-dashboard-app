@@ -1,13 +1,17 @@
 interface PyodideInterface {
-  runPython: (code: string) => any;
-  globals: any;
-  FS: any;
+  runPython: (code: string) => unknown;
+  globals: Record<string, unknown>;
+  FS: {
+    writeFile: (path: string, data: string | Uint8Array) => void;
+    readFile: (path: string) => Uint8Array;
+    unlink: (path: string) => void;
+  };
   version: string;
 }
 
 declare global {
   interface Window {
-    loadPyodide: (config?: any) => Promise<PyodideInterface>;
+    loadPyodide: (config?: { indexURL?: string }) => Promise<PyodideInterface>;
   }
 }
 
@@ -132,14 +136,14 @@ builtins.print = captured_print
       const stderr = this.pyodide.runPython('_stderr_capture.get_output()');
 
       // Format result if it's not None
-      let output = stdout;
-      if (result !== undefined && result !== null && stdout === '') {
+      let output = String(stdout || '');
+      if (result !== undefined && result !== null && output === '') {
         output = String(result);
       }
 
       return {
-        output: output || '',
-        error: stderr || null,
+        output,
+        error: stderr ? String(stderr) : null,
       };
     } catch (error) {
       // Parse Python error
@@ -151,7 +155,7 @@ builtins.print = captured_print
     }
   }
 
-  private formatPythonError(error: any): string {
+  private formatPythonError(error: unknown): string {
     if (error instanceof Error) {
       // Extract relevant Python error information
       const message = error.message;

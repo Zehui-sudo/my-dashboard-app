@@ -64,6 +64,12 @@ export interface SectionLink {
   language: 'python' | 'javascript';
   matchedKeywords?: string[]; // 匹配到的关键词
   relevanceScore?: number;    // 相关性分数 (0-1)
+  // 混合匹配新增字段
+  fusedScore?: number;        // 融合后的最终分数
+  matchType?: 'keyword' | 'semantic' | 'hybrid';  // 匹配类型
+  confidence?: 'high' | 'medium' | 'low';         // 置信度
+  explanation?: string;       // 匹配理由说明
+  sourceMatches?: string[];   // 来源匹配（keyword/semantic）
 }
 
 // 知识点索引条目
@@ -114,6 +120,8 @@ export interface LearningState {
   selectedContent: ContextReference | null;
   // User Info
   userName?: string;
+  // Hybrid Knowledge Link Service State
+  hybridServiceInitialized: boolean;
 }
 
 // AI 对话消息
@@ -172,6 +180,8 @@ export interface LearningActions {
   getSectionProgress: (sectionId: string) => UserProgress | undefined;
   getCompletedCount: () => number;
   getFavoriteCount: () => number;
+  // Hybrid Knowledge Link Actions
+  initializeHybridService: () => Promise<void>;
 }
 
 // API 响应类型

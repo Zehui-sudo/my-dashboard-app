@@ -44,7 +44,7 @@ export function ChatMessageRenderer({
           rehypePlugins={rehypePlugins}
           components={{
             p: ({ children }) => <p className="my-2 leading-relaxed">{children}</p>,
-            code: ({ node, className, children, ...props }) => {
+            code: ({ className, children, ...props }) => {
               const match = /language-(\w+)/.exec(className || '');
               const codeContent = String(children).replace(/\n$/, '');
 
@@ -82,14 +82,14 @@ export function ChatMessageRenderer({
             table: ({ children }) => (
               <div className="my-4 overflow-hidden rounded-lg border border-border">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-xs">{children}</table>
+                  <table className="w-full text-xs min-w-0">{children}</table>
                 </div>
               </div>
             ),
             thead: ({ children }) => <thead className="bg-muted">{children}</thead>,
             tr: ({ children }) => <tr className="border-b border-border hover:bg-muted/50 last:border-b-0">{children}</tr>,
-            th: ({ children }) => <th className="text-left font-semibold p-2 border-r border-border last:border-r-0">{children}</th>,
-            td: ({ children }) => <td className="p-2 border-r border-border last:border-r-0">{children}</td>,
+            th: ({ children }) => <th className="text-left font-semibold p-1 text-xs border-r border-border last:border-r-0 min-w-0">{children}</th>,
+            td: ({ children }) => <td className="p-1 text-xs border-r border-border last:border-r-0 min-w-0 break-words">{children}</td>,
             blockquote: ({ children }) => <blockquote className="my-4 pl-3 border-l-4 border-primary bg-muted/50 italic py-1">{children}</blockquote>,
             ul: ({ children }) => <ul className="my-2 ml-5 list-disc space-y-1">{children}</ul>,
             ol: ({ children }) => <ol className="my-2 ml-5 list-decimal space-y-1">{children}</ol>,
@@ -105,7 +105,12 @@ export function ChatMessageRenderer({
         <div className="mt-4 pt-4 border-t">
           <p className="text-xs text-muted-foreground mb-2">相关知识点：</p>
           <div className="flex flex-wrap gap-2">
-            {linkedSections.map((link) => (
+            {linkedSections
+              .filter((link) => {
+                const displayScore = link.fusedScore ?? link.relevanceScore;
+                return displayScore !== undefined && displayScore > 0.2;
+              })
+              .map((link) => (
               <SectionLinkTag
                 key={link.sectionId}
                 link={link}

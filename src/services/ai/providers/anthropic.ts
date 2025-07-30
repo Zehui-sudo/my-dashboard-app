@@ -57,7 +57,7 @@ export class AnthropicProvider extends AIProvider {
                 controller.terminate();
                 return;
               }
-            } catch (e) {
+            } catch {
               console.error('Failed to parse Anthropic stream chunk:', jsonStr);
             }
           }
@@ -75,7 +75,7 @@ export class AnthropicProvider extends AIProvider {
 
     const { messages, model = this.model, temperature = 0.7, maxTokens = 2000, contextReference, stream = false } = request;
 
-    let formattedMessages = this.formatMessages(messages);
+    const formattedMessages = this.formatMessages(messages);
     
     // Add context as a system message if provided
     let systemMessage = '';

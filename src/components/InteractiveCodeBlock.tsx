@@ -85,7 +85,7 @@ export function InteractiveCodeBlock({
           // Create a custom console to capture output
           const outputs: string[] = [];
           const customConsole = {
-            log: (...args: any[]) => {
+            log: (...args: unknown[]) => {
               outputs.push(args.map(arg => String(arg)).join(' '));
             }
           };

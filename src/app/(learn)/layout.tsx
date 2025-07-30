@@ -23,7 +23,7 @@ export default function LearnLayout({
         <div className="hidden lg:flex h-full w-full p-4 bg-background">
           <ResizablePanelGroup direction="horizontal" className="max-w-full">
             <ResizablePanel defaultSize={20} minSize={15}>
-              <div className="p-4 h-full">
+              <div className="h-full overflow-hidden">
                 <NavigationSidebar />
               </div>
             </ResizablePanel>
@@ -34,7 +34,7 @@ export default function LearnLayout({
               </Card>
             </ResizablePanel>
             <ResizableHandle withHandle className="opacity-0" />
-            <ResizablePanel defaultSize={25} minSize={20}>
+            <ResizablePanel defaultSize={25} minSize={15}>
               <div className="h-full pl-4">
                 <AIChatSidebar />
               </div>

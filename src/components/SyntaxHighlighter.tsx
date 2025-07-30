@@ -79,7 +79,7 @@ function highlightCode(code: string, language: string): string {
   const patterns = languagePatterns[language as keyof typeof languagePatterns];
   if (!patterns) return escapeHtml(code);
 
-  let tokens: Token[] = [];
+  const tokens: Token[] = [];
 
   // 1. Find all matches and create tokens
   for (const [type, pattern] of Object.entries(patterns)) {
