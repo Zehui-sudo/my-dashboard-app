@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { Search, ChevronRight, CheckCircle2, Circle, ChevronDown, Star } from 'lucide-react';
+import { Search, ChevronRight, CheckCircle2, Circle, ChevronDown, Star, PanelLeftClose } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,11 +14,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-export function NavigationSidebar() {
+type NavigationSidebarProps = {
+  toggleSidebar: () => void;
+};
+
+export function NavigationSidebar({ toggleSidebar }: NavigationSidebarProps) {
   const currentPath = useLearningStore((state) => state.currentPath);
   const currentSection = useLearningStore((state) => state.currentSection);
   const loadSection = useLearningStore((state) => state.loadSection);
-  const loadPath = useLearningStore((state) => state.loadPath);
   const uiState = useLearningStore((state) => state.uiState);
   const updateUIState = useLearningStore((state) => state.updateUIState);
   const userProgress = useLearningStore((state) => state.userProgress);
@@ -39,35 +42,15 @@ export function NavigationSidebar() {
     loadSection(section.id);
   };
 
-  const handleLanguageChange = (language: 'python' | 'javascript') => {
-    loadPath(language);
-  };
-
-
   return (
     <div className="h-full flex flex-col bg-background rounded-lg">
       <div className="px-4 py-2 flex-shrink-0">
         <div className="border-b pb-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold">课程目录</h2>
-            {currentPath && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                    {currentPath.language === 'python' ? 'Python' : 'JavaScript'}
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleLanguageChange('python')}>
-                    Python
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleLanguageChange('javascript')}>
-                    JavaScript
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+            <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-8 w-8">
+              <PanelLeftClose className="h-4 w-4" />
+            </Button>
           </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

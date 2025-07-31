@@ -212,7 +212,6 @@ export function InteractiveCodeBlock({
               onChange={handleCodeChange}
               onBlur={handleCodeBlur}
               language={language}
-              height="200px"
               className="border-0"
               searchTerm={searchTerm}
               enableSearch={showSearch}
@@ -267,7 +266,7 @@ export function InteractiveCodeBlock({
                 <div className="border-b px-3 py-2 text-sm font-medium">
                   输出结果
                 </div>
-                <ScrollArea className="h-[150px]">
+                <ScrollArea className="max-h-[200px]">
                   <pre className="p-3 font-mono whitespace-pre-wrap" style={{ fontSize: `${fontSize * 0.875}px` }}>{output}</pre>
                 </ScrollArea>
               </div>

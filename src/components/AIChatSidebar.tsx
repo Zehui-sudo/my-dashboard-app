@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Plus, History, Bot } from 'lucide-react';
+import { Send, Plus, History, Bot, PanelRightClose } from 'lucide-react';
 import { useLearningStore } from '@/store/learningStore';
 import type { AIProviderType } from '@/types';
 import {
@@ -18,7 +18,11 @@ import { ContextReference } from './ContextReference';
 import { ChatMessageRenderer } from './ChatMessageRenderer';
 import { ChatHistoryView } from './ChatHistoryView';
 
-export function AIChatSidebar() {
+type AIChatSidebarProps = {
+  toggleSidebar: () => void;
+};
+
+export function AIChatSidebar({ toggleSidebar }: AIChatSidebarProps) {
   const {
     chatSessions,
     activeChatSessionId,
@@ -110,6 +114,9 @@ export function AIChatSidebar() {
           </Button>
           <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setView('history')}>
             <History className="h-4 w-4" />
+          </Button>
+          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={toggleSidebar}>
+            <PanelRightClose className="h-4 w-4" />
           </Button>
         </div>
       </div>

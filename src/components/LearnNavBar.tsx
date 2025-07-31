@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useMemo } from "react";
 import { useLearningStore } from "@/store/learningStore";
 import {
@@ -32,6 +33,13 @@ import { Home, ChevronLeft, ChevronRight, BookOpen, Type } from "lucide-react";
 
 export function LearnNavBar() {
   const { currentPath, currentSection, loadPath, loadSection, fontSize, setFontSize, userProgress } = useLearningStore();
+
+  const languages = [
+    { value: 'python', label: 'Python', logo: '/python-logo.svg' },
+    { value: 'javascript', label: 'JavaScript', logo: '/javascript-logo.svg' },
+  ];
+
+  const selectedLanguage = languages.find(l => l.value === (currentPath?.language || ''));
 
   const {
     allSections,
@@ -117,12 +125,37 @@ export function LearnNavBar() {
             value={language as string}
             onValueChange={(value) => handleLanguageChange(value as "python" | "javascript")}
           >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="选择语言" />
+            <SelectTrigger className="w-[150px]">
+              <div className="flex items-center gap-2">
+                {selectedLanguage ? (
+                  <>
+                    <Image
+                      src={selectedLanguage.logo}
+                      alt={selectedLanguage.label}
+                      width={16}
+                      height={16}
+                    />
+                    <span>{selectedLanguage.label}</span>
+                  </>
+                ) : (
+                  <SelectValue placeholder="选择语言" />
+                )}
+              </div>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="python">Python</SelectItem>
-              <SelectItem value="javascript">JavaScript</SelectItem>
+              {languages.map((lang) => (
+                <SelectItem key={lang.value} value={lang.value}>
+                  <div className="flex items-center gap-2">
+                    <Image
+                      src={lang.logo}
+                      alt={lang.label}
+                      width={16}
+                      height={16}
+                    />
+                    <span>{lang.label}</span>
+                  </div>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

@@ -70,7 +70,6 @@ interface CodeMirrorCodeBlockProps {
   onChange?: (value: string) => void;
   onBlur?: (value: string) => void;
   language: 'javascript' | 'python';
-  height?: string;
   readOnly?: boolean;
   className?: string;
   searchTerm?: string;
@@ -83,7 +82,6 @@ export const CodeMirrorCodeBlock = memo(function CodeMirrorCodeBlock({
   onChange,
   onBlur,
   language,
-  height = '200px',
   readOnly = false,
   className = '',
   searchTerm = '',
@@ -187,8 +185,8 @@ export const CodeMirrorCodeBlock = memo(function CodeMirrorCodeBlock({
       className={`border rounded-md overflow-hidden bg-background ${className}`}
     >
       <CodeMirror
-        value={value}
-        height={height}
+        value={value + '\n'}
+        maxHeight="200px"
         extensions={[
           theme === 'light' ? githubLight : githubDark,
           themeOverride,
@@ -240,7 +238,6 @@ export const CodeMirrorCodeBlock = memo(function CodeMirrorCodeBlock({
   return (
     prevProps.value === nextProps.value &&
     prevProps.language === nextProps.language &&
-    prevProps.height === nextProps.height &&
     prevProps.readOnly === nextProps.readOnly &&
     prevProps.className === nextProps.className &&
     prevProps.onChange === nextProps.onChange &&
