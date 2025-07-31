@@ -45,42 +45,44 @@ export function NavigationSidebar() {
 
 
   return (
-    <div className="h-full flex flex-col bg-background rounded-lg border">
-      <div className="p-4 border-b flex-shrink-0">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">课程目录</h2>
-          {currentPath && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                  {currentPath.language === 'python' ? 'Python' : 'JavaScript'}
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleLanguageChange('python')}>
-                  Python
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleLanguageChange('javascript')}>
-                  JavaScript
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="搜索章节..."
-            value={searchQuery}
-            onChange={(e) => updateUIState({ searchQuery: e.target.value })}
-            className="pl-9 text-sm"
-          />
+    <div className="h-full flex flex-col bg-background rounded-lg">
+      <div className="px-4 py-2 flex-shrink-0">
+        <div className="border-b pb-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold">课程目录</h2>
+            {currentPath && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="flex items-center gap-1">
+                    {currentPath.language === 'python' ? 'Python' : 'JavaScript'}
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleLanguageChange('python')}>
+                    Python
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleLanguageChange('javascript')}>
+                    JavaScript
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="搜索章节..."
+              value={searchQuery}
+              onChange={(e) => updateUIState({ searchQuery: e.target.value })}
+              className="pl-9 text-sm"
+            />
+          </div>
         </div>
       </div>
 
       <ScrollArea className="flex-1 overflow-hidden">
-        <div className="p-4">
+        <div className="px-4">
           {filteredChapters.length === 0 ? (
             <div className="text-center text-sm text-muted-foreground py-8">
               未找到匹配的章节
@@ -94,12 +96,12 @@ export function NavigationSidebar() {
               {filteredChapters.map((chapter, chapterIndex) => (
                 <AccordionItem key={chapter.id} value={chapter.id}>
                   <AccordionTrigger className="px-0 py-3 hover:no-underline">
-                    <div className="flex items-center gap-2 text-left">
+                    <div className="flex min-w-0 items-center gap-2 text-left">
                       <span className="text-xs font-mono text-muted-foreground">
                         {String(chapterIndex + 1).padStart(2, '0')}
                       </span>
-                      <span className="font-medium">{chapter.title}</span>
-                      <Badge variant="secondary" className="ml-auto text-xs">
+                      <span className="flex-1 font-medium truncate">{chapter.title}</span>
+                      <Badge variant="secondary" className="shrink-0 text-xs">
                         {chapter.sections.length}
                       </Badge>
                     </div>
@@ -144,9 +146,11 @@ export function NavigationSidebar() {
         </div>
       </ScrollArea>
 
-      <div className="border-t p-4 flex-shrink-0">
-        <div className="text-xs text-muted-foreground text-center">
-          总进度: {currentPath?.chapters.reduce((acc, ch) => acc + ch.sections.length, 0) || 0} 章节
+      <div className="p-4 flex-shrink-0">
+        <div className="border-t pt-4">
+          <div className="text-xs text-muted-foreground text-center">
+            总进度: {currentPath?.chapters.reduce((acc, ch) => acc + ch.sections.length, 0) || 0} 章节
+          </div>
         </div>
       </div>
     </div>

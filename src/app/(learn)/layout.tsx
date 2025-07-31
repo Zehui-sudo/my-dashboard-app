@@ -22,7 +22,7 @@ export default function LearnLayout({
         {/* TODO: Add mobile and tablet layouts */}
         <div className="hidden lg:flex h-full w-full p-4 bg-background">
           <ResizablePanelGroup direction="horizontal" className="max-w-full">
-            <ResizablePanel defaultSize={20} minSize={15}>
+            <ResizablePanel defaultSize={20} minSize={22}>
               <div className="h-full overflow-hidden">
                 <NavigationSidebar />
               </div>

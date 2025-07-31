@@ -37,27 +37,31 @@ export class SemanticService {
     try {
       console.log('正在加载语义模型...');
       
-      // 加载 bge-small-zh-v1.5 模型
+      // 尝试加载 bge-small-zh-v1.5 模型（不使用量化版本）
       this.embedder = await pipeline(
         'feature-extraction',
         'BAAI/bge-small-zh-v1.5',
         {
-          quantized: true // 使用量化模型减少内存占用
+          quantized: false // 禁用量化，使用原始模型
         }
       );
       
       this.isInitialized = true;
       console.log('语义模型加载完成');
     } catch (error) {
-      console.error('语义模型加载失败:', error);
-      // 降级到 CPU
+      console.error('bge-small-zh-v1.5 模型加载失败:', error);
+      // 降级到通用英文模型
       try {
+        console.log('正在加载备用模型...');
         this.embedder = await pipeline(
           'feature-extraction',
-          'BAAI/bge-small-zh-v1.5',
-          { quantized: true }
+          'Xenova/all-MiniLM-L6-v2',
+          { 
+            quantized: false
+          }
         );
         this.isInitialized = true;
+        console.log('备用模型加载完成');
       } catch (fallbackError) {
         console.error('语义模型加载完全失败:', fallbackError);
         throw fallbackError;
