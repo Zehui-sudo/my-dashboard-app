@@ -6,13 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { Search, ChevronRight, CheckCircle2, Circle, ChevronDown, Star, PanelLeftClose } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Search, ChevronRight, CheckCircle2, Circle, Star, PanelLeftClose } from 'lucide-react';
 
 type NavigationSidebarProps = {
   toggleSidebar: () => void;
